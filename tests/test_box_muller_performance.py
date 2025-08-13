@@ -4,7 +4,7 @@ from typing import Dict, List
 import numpy as np
 import pytest
 
-from mc_lab.box_mueller import box_muller
+from mc_lab.box_muller import box_muller
 
 # run with pytest -q -m performance -s
 

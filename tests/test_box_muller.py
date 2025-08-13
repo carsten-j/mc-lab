@@ -1,6 +1,6 @@
 import numpy as np
 
-from mc_lab.box_mueller import box_muller
+from mc_lab.box_muller import box_muller
 
 
 def test_box_muller_classic_stats():
