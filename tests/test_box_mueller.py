@@ -1,6 +1,6 @@
 import numpy as np
 
-from mc_lab.box_mueller import box_muller, box_muller_pairs
+from mc_lab.box_mueller import box_muller
 
 
 def test_box_muller_classic_stats():
@@ -20,10 +20,16 @@ def test_box_muller_polar_stats():
     assert np.isclose(x.var(), 1.0, atol=0.03)
 
 
-def test_box_muller_pairs_shape():
+def test_box_muller_return_pairs_classic_shape_and_values():
     m = 10_001
-    pairs = box_muller_pairs(m, random_state=7, method="classic")
+    pairs = box_muller(2 * m, random_state=7, method="classic", return_pairs=True)
     assert pairs.shape == (m, 2)
     # flatten should produce same numbers as direct call
     flat = box_muller(2 * m, random_state=7, method="classic", return_pairs=False)
     assert np.allclose(pairs.ravel()[: 2 * m], flat)
+
+
+def test_box_muller_return_pairs_polar_shape():
+    m = 5_000
+    pairs = box_muller(2 * m, random_state=1234, method="polar", return_pairs=True)
+    assert pairs.shape == (m, 2)
