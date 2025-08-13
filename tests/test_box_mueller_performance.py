@@ -101,3 +101,66 @@ def test_box_muller_perf_compare_methods():
             (n / max(dt_polar, 1e-12)) / 1e6,
         )
     )
+
+
+@pytest.mark.performance
+def test_box_muller_perf_polar_njit():
+    """Measure throughput of the Numba-accelerated polar variant.
+
+    Skips if Numba is not installed.
+    """
+    pytest.importorskip("numba")
+
+    sizes: List[int] = [50_000, 200_000]
+    times: Dict[int, float] = {}
+
+    for n in sizes:
+        start = time.perf_counter()
+        x = box_muller(n, random_state=123, method="polar_njit")
+        end = time.perf_counter()
+        assert x.shape == (n,)
+        times[n] = end - start
+
+    assert all(t > 0 for t in times.values())
+    for n in sizes:
+        print(
+            f"polar_njit: n={n:,} time={times[n]:.6f}s rate={n / max(times[n], 1e-12):.1f} samples/s"
+        )
+
+
+@pytest.mark.performance
+def test_box_muller_perf_compare_polar_vs_polar_njit():
+    """Compare vectorized polar vs Numba-accelerated polar.
+
+    Skips if Numba is not installed. No strict ordering assertion; reports timings.
+    """
+    pytest.importorskip("numba")
+
+    n = 200_000
+
+    t0 = time.perf_counter()
+    x_vec = box_muller(n, random_state=321, method="polar")
+    t1 = time.perf_counter()
+
+    x_njit = box_muller(n, random_state=321, method="polar_njit")
+    t2 = time.perf_counter()
+
+    dt_vec = t1 - t0
+    dt_njit = t2 - t1
+
+    assert x_vec.shape == (n,)
+    assert x_njit.shape == (n,)
+
+    for x in (x_vec, x_njit):
+        assert np.isfinite(x).all()
+        assert abs(x.mean()) < 0.05
+        assert 0.9 < x.var() < 1.1
+
+    print(
+        "compare (polar): vec={:.6f}s ({:.1f} M/s), njit={:.6f}s ({:.1f} M/s)".format(
+            dt_vec,
+            (n / max(dt_vec, 1e-12)) / 1e6,
+            dt_njit,
+            (n / max(dt_njit, 1e-12)) / 1e6,
+        )
+    )

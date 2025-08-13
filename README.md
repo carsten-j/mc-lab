@@ -91,6 +91,14 @@ python -m ipykernel install --user --name mc-lab
 
 Note: This is an educational project; APIs and implementations may evolve for clarity. If you need production-grade performance, consider specialized libraries or contribute optimizations guarded by tests.
 
+## Numba
+
+The Box-Muller implementation can be used with numba for performance improvenments. See the installation notes for numba on how to set it up on your hardware or simply try
+
+```bash
+uv pip install numba
+```
+
 ## Collaboration
 
 Open to collaboration and contributions. If you’re interested:
