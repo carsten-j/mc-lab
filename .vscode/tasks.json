@@ -1,0 +1,15 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "pytest single test",
+			"type": "shell",
+			"command": "pytest -q tests/test_advance_rejection_sampling.py::test_compare_advanced_samplers -q",
+			"isBackground": false,
+			"problemMatcher": [
+				"$pytest"
+			],
+			"group": "build"
+		}
+	]
+}
