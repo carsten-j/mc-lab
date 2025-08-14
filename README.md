@@ -4,6 +4,8 @@ Educational implementations of core Monte Carlo method algorithms. The goal is l
 
 ## What’s inside
 
+- Basic importance sampling
+- Rejection sampling and a few more advance rejection sampling methods
 - Normal sampling via Box–Muller (classic and polar) — `src/mc_lab/box_mueller.py`
 - Inverse transform sampling (analytical, numerical interpolation/root-finding, adaptive; plus alias method for discrete) — `src/mc_lab/inverse_transform.py`
 - Multivariate Gaussian sampling with Cholesky/eigendecomposition fallback — `src/mc_lab/multivariate_gaussian.py`
