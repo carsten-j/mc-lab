@@ -4,6 +4,7 @@ from typing import Dict, Optional, Tuple
 import arviz as az
 import numpy as np
 import xarray as xr
+from tqdm.auto import tqdm
 
 
 class GibbsSampler2D:
@@ -104,11 +105,17 @@ class GibbsSampler2D:
 
         # Run each chain
         for chain_idx in range(n_chains):
-            if progressbar:
-                print(f"Sampling chain {chain_idx + 1}/{n_chains}...")
-
             current_state = initial_states[chain_idx].copy()
             sample_idx = 0
+
+            pbar = None
+            if progressbar:
+                pbar = tqdm(
+                    total=total_iterations,
+                    desc=f"Chain {chain_idx + 1}/{n_chains}",
+                    leave=True,
+                    dynamic_ncols=True,
+                )
 
             for iteration in range(total_iterations):
                 # Gibbs sampling steps
@@ -132,10 +139,16 @@ class GibbsSampler2D:
 
                     sample_idx += 1
 
-            if progressbar:
-                print(
-                    f"  Chain {chain_idx + 1} complete: {n_samples} samples collected"
-                )
+                    # Update tqdm postfix with collected samples
+                    if pbar is not None:
+                        pbar.set_postfix(samples=sample_idx)
+
+                # Step progress bar forward
+                if pbar is not None:
+                    pbar.update(1)
+
+            if pbar is not None:
+                pbar.close()
 
         # Create ArviZ InferenceData object
         idata = self._create_inference_data(

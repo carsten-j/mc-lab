@@ -64,9 +64,10 @@ pytest
 ruff format .
 ruff check --select I --fix
 ruff check --fix
-# Or via the Makefile stored under src/mc_lab:
-make -f src/mc_lab/Makefile format-fix
-make -f src/mc_lab/Makefile lint-fix
+# Or via the Makefile at the repo root:
+make format-fix
+make lint-fix
+make perftest   # run only tests marked with @pytest.mark.performance (prints output)
 ```
 
 ## Quick usage example
@@ -104,6 +105,7 @@ uv pip install numba
 ## Collaboration
 
 Open to collaboration and contributions. If you’re interested:
+
 - Open an issue to discuss ideas or report bugs.
 - Submit small, focused PRs with tests when public behavior changes.
 - For larger changes, start with a brief design proposal in an issue.

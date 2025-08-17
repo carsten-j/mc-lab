@@ -2,6 +2,7 @@ import numpy as np
 import pytest
 from scipy import stats
 from scipy.stats import kstest
+
 from mc_lab.rejection_sampling import RejectionSampler
 
 

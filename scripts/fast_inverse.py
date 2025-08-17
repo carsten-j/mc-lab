@@ -1,4 +1,5 @@
 import numpy as np
+
 from mc_lab.fast_inverse_transform import ChebyshevSampler
 
 
