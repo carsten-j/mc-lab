@@ -1,9 +1,19 @@
 {
   "permissions": {
     "allow": [
+      "Bash(grep:*)",
+      "Bash(rg:*)",
+      "Bash(fd:*)",
+      "Bash(find:*)",
+      "Bash(mkdir:*)",
+      "Bash(ls:*)",
       "Bash(git log:*)"
     ],
-    "deny": [],
-    "ask": []
+    "deny": [
+      "Bash(git checkout:*)",
+      "Bash(git add:*)"
+    ],
+    "ask": [],
+    "defaultMode": "acceptEdits"
   }
 }

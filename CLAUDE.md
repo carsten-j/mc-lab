@@ -9,17 +9,20 @@ MC-LAB is an educational repository for learning Monte Carlo statistical methods
 ### Core Architecture
 
 **Central RNG System**: All modules use a unified random number generator interface through `_rng.py`:
+
 - `RandomState` type alias accepts int seeds, Generator objects, or None
 - `as_generator()` function normalizes inputs to `np.random.Generator`
 - `RNGLike` protocol defines the minimal interface used across modules
 
 **Module Organization**: Each sampling method is implemented as a standalone module with:
-- Main sampling function(s) 
+
+- Main sampling function(s)
 - Helper utilities specific to that method
 - Comprehensive docstrings and type hints
 - Corresponding test file and demonstration notebook
 
 **Key Modules**:
+
 - `box_muller.py` - Normal sampling (classic/polar methods, optional Numba support)
 - `inverse_transform.py` - Analytical, numerical, and discrete inverse transforms
 - `fast_inverse_transform.py` - Optimized inverse sampling implementations  
@@ -33,12 +36,14 @@ MC-LAB is an educational repository for learning Monte Carlo statistical methods
 ## Essential Commands
 
 ### Development Workflow
+
 ```bash
 uv sync                    # Setup environment
 source .venv/bin/activate  # Activate environment
 ```
 
 ### Testing and Quality
+
 ```bash
 make test          # Run all non-performance tests
 make perftest      # Run performance tests with output
@@ -47,6 +52,7 @@ make lint-fix      # Lint and auto-fix issues
 ```
 
 ### Individual Test Execution
+
 ```bash
 uv run pytest tests/test_box_muller.py::test_specific_function
 uv run pytest -k "pattern"
@@ -58,12 +64,19 @@ uv run pytest -k "pattern"
 
 **RNG Usage**: All functions accepting randomness should use the `RandomState` type and `as_generator()` utility from `_rng.py`.
 
-**Testing Strategy**: 
+**Testing Strategy**:
+
 - Statistical correctness over micro-benchmarks
 - Performance tests marked with `@pytest.mark.performance`
 - Separate test files mirror source structure
 
-**Notebooks**: Each major algorithm has a corresponding demo notebook showing usage and visualizations. No trailing newlines in notebook files.
+**Notebooks**: Each major algorithm has a corresponding demo notebook showing usage and visualizations. No trailing newlines in notebook files. Follow these rules when created and updating notebooks:
+
+- Rule 1: Tell a story for an audience
+- Rule 2: Document the process, not just the results
+- Rule 3: Use cell divisions to make steps clear
+- Rule 4: Modularize code
+- Rule 5: Design your notebooks to be read, run, and explored
 
 ## Code Standards
 
@@ -71,3 +84,6 @@ uv run pytest -k "pattern"
 - Ruff formatting: 96-char lines, double quotes, sorted imports
 - Google-style docstrings for public functions/classes
 - snake_case functions/variables, PascalCase classes
+- error Handling - use typed exceptions
+- documentation: Google-style docstrings for public functions/classes
+  

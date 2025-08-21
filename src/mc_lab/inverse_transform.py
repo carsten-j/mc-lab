@@ -391,5 +391,11 @@ def create_sampler(
             raise ValueError("cdf and x_range must be provided for adaptive method")
         return AdaptiveInverseTransformSampler(cdf, x_range, **kwargs)
 
+    elif method == "stratified":
+        if inverse_cdf is None:
+            raise ValueError("inverse_cdf must be provided for analytical method")
+        base_sampler = InverseTransformSampler(inverse_cdf, **kwargs)
+        return StratifiedInverseTransformSampler(base_sampler, **kwargs)
+
     else:
         raise ValueError(f"Unknown method: {method}")
