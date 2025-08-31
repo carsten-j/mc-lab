@@ -78,6 +78,17 @@ uv run pytest -k "pattern"
 - Rule 4: Modularize code
 - Rule 5: Design your notebooks to be read, run, and explored
 
+Use the following colors for visualization:
+#332288
+#117733
+#44AA99
+#88CCEE
+#DDCC77
+#CC6677
+#AA4499
+#AA4499
+
+
 ## Code Standards
 
 - Python 3.12+ with strict typing
