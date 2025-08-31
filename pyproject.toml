@@ -1,9 +1,24 @@
 [project]
-name = "mc-lab"
+name = "mc-lab-edu"
 version = "0.1.0"
-description = "Add your description here"
+description = "Educational implementations of core Monte Carlo method algorithms"
 readme = "README.md"
 requires-python = ">=3.12"
+authors = [
+    {name = "Carsten Jørgensen", email = "carstenj@gmail.com"}
+]
+license = {text = "MIT"}
+keywords = ["monte-carlo", "statistics", "sampling", "education", "numerical-methods"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Education",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Mathematics",
+    "Topic :: Education",
+]
 dependencies = [
     "arviz>=0.22.0",
     "iprogress>=0.4",
@@ -27,5 +42,7 @@ dev-dependencies = [
     "pytest>=8.4.1",
     "ty>=0.0.1a17",
     "ruff>=0.12.8",
-    "pre-commit>=4.3.0"
+    "pre-commit>=4.3.0",
+    "build>=1.3.0",
+    "twine>=6.1.0",
 ]

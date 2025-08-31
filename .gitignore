@@ -5,3 +5,9 @@ __pycache__/
 ProblemSets/
 *.nc
 *.ipynb_checkpoints
+
+# Python packaging
+dist/
+build/
+*.egg-info/
+*.egg-info

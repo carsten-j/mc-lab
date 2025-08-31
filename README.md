@@ -1,6 +1,63 @@
 # mc-lab
 
-Educational implementations of core Monte Carlo method algorithms. The goal is learning, clarity, and numerical correctness over raw speed or micro-optimizations. Expect straightforward NumPy/SciPy-based code with helpful tests and a couple of demo notebooks.
+Educational implementations of core Monte Carlo method algorithms. The goal is learning, clarity, and nu## Collaboration
+
+Open to collaboration and contributions. If you're interested:
+
+- Open an issue to discuss ideas or report bugs.
+- Submit small, focused PRs with tests when public behavior changes.
+- For larger changes, start with a brief design proposal in an issue.
+
+## Publishing new versions to PyPI
+
+This package is published to PyPI as `mc-lab-edu`. To publish a new version:
+
+### 1. Update the version
+
+Edit `pyproject.toml` and increment the version number:
+
+```toml
+[project]
+name = "mc-lab-edu"
+version = "0.1.1"  # or 0.2.0 for larger changes
+```
+
+### 2. Build and upload
+
+```bash
+# Clean previous builds
+rm -rf dist/
+
+# Build the package
+uv run python -m build
+
+# Check the package for issues
+uv run twine check dist/*
+
+# Upload to PyPI (requires API token in ~/.pypirc)
+uv run twine upload dist/*
+```
+
+### 3. Setup PyPI authentication (one-time setup)
+
+If you haven't set up authentication yet:
+
+1. Get an API token from <https://pypi.org/manage/account/token/>
+2. Create `~/.pypirc`:
+
+```ini
+[distutils]
+index-servers = pypi
+
+[pypi]
+repository = https://upload.pypi.org/legacy/
+username = __token__
+password = pypi-your-actual-token-here
+```
+
+**Note**: Never commit API tokens to version control. The `.pypirc` file should remain in your home directory only.
+
+## Course contextorrectness over raw speed or micro-optimizations. Expect straightforward NumPy/SciPy-based code with helpful tests and a couple of demo notebooks.
 
 ## What’s inside
 
@@ -10,6 +67,16 @@ Educational implementations of core Monte Carlo method algorithms. The goal is l
 - Inverse transform sampling (analytical, numerical interpolation/root-finding, adaptive; plus alias method for discrete) — `src/mc_lab/inverse_transform.py`
 - Multivariate Gaussian sampling with Cholesky/eigendecomposition fallback — `src/mc_lab/multivariate_gaussian.py`
 - Tests in `tests/` and a demo notebook in `notebooks/`
+
+## Installation
+
+Install from PyPI:
+
+```bash
+pip install mc-lab-edu
+```
+
+Or for local development:
 
 ## Clone the repository
 
