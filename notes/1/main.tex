@@ -1,0 +1,1026 @@
+\documentclass[11pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath, amsfonts, amssymb}
+\usepackage{geometry}
+\usepackage{enumitem}
+\usepackage{fancyhdr}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{algorithm}
+\usepackage{algorithmic}
+
+\geometry{margin=1in}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[C]{Advanced Monte Carlo Methods: Examination Questions}
+\fancyfoot[C]{\thepage}
+
+\title{\textbf{Challenging Questions on Inverse Transform, Rejection Sampling,\\
+and Importance Sampling}}
+\date{}
+
+\newcommand{\question}[1]{\subsection*{\textcolor{blue}{Question #1}}}
+\newcommand{\solution}[1]{\subsection*{\textcolor{red}{Solution #1}}}
+
+\begin{document}
+
+\maketitle
+
+\section{Theoretical Foundations}
+
+\question{1}
+\textbf{Optimal Importance Sampling Analysis}: Consider the optimal importance sampling proposal $q_{opt}(x) = |\phi(x)|\pi(x) / \int |\phi(x)|\pi(x)dx$. Prove rigorously why this proposal cannot be implemented in practice, and derive the exact variance reduction factor compared to standard Monte Carlo. Then explain the paradox: if we could implement $q_{opt}$, what would happen to the variance estimate?
+
+\solution{1}
+\textbf{Part 1: Why $q_{opt}$ cannot be implemented}
+
+The optimal proposal is defined as:
+$$q_{opt}(x) = \frac{|\phi(x)|\pi(x)}{\int_X |\phi(x)|\pi(x)dx}$$
+
+This cannot be implemented because:
+\begin{enumerate}
+\item The normalizing constant $\int_X |\phi(x)|\pi(x)dx$ is exactly the integral we want to compute when $\phi(x) \geq 0$
+\item Even when $\phi(x)$ changes sign, computing this integral requires solving the original problem
+\item If we could evaluate this integral, we wouldn't need Monte Carlo methods
+\end{enumerate}
+
+\textbf{Part 2: Variance reduction factor}
+
+For standard Monte Carlo: $\text{Var}[\phi(X)] = \int \phi^2(x)\pi(x)dx - I^2$
+
+For optimal importance sampling:
+$$\text{Var}_{q_{opt}}[\phi(X)w(X)] = \int \frac{\phi^2(x)\pi^2(x)}{q_{opt}(x)}dx - I^2$$
+
+Substituting $q_{opt}$:
+$$= \int \phi^2(x)\pi^2(x) \frac{\int |\phi(y)|\pi(y)dy}{|\phi(x)|\pi(x)}dx - I^2$$
+$$= \int |\phi(x)|\pi(x)dx \cdot \int \frac{\phi^2(x)\pi(x)}{|\phi(x)|}dx - I^2$$
+
+When $\phi(x) \geq 0$:
+$$= I^2 - I^2 = 0$$
+
+The variance reduction factor is infinite (perfect variance reduction).
+
+\textbf{Part 3: The Paradox}
+
+If we could implement $q_{opt}$ for $\phi(x) \geq 0$:
+\begin{itemize}
+\item The importance sampling estimator would have zero variance
+\item Every sample would give the exact answer $I$
+\item But to construct $q_{opt}$, we already needed to know $I = \int \phi(x)\pi(x)dx$
+\item This creates a logical contradiction: we need the answer to get zero variance in estimating the answer
+\end{itemize}
+
+\question{2}
+\textbf{Curse of Dimensionality in Rejection Sampling}: The documents mention that deterministic methods have error $O(n^{-1/d})$ in $d$ dimensions. Derive how the acceptance rate in rejection sampling scales with dimension $d$ when using a $d$-dimensional normal proposal for a $d$-dimensional target with bounded support. What does this imply about the practical feasibility of rejection sampling in high dimensions?
+
+\solution{2}
+Consider a target distribution $\pi(x)$ with bounded support on $[-a,a]^d$ and a $d$-dimensional normal proposal $q(x) = (2\pi)^{-d/2}\exp(-\|x\|^2/2)$.
+
+\textbf{Scaling Analysis:}
+
+The acceptance rate is $1/M$ where $M = \sup_x \pi(x)/q(x)$.
+
+For the normal proposal on the bounded region:
+\begin{itemize}
+\item The proposal density at the origin: $q(0) = (2\pi)^{-d/2}$
+\item The proposal becomes negligible outside a sphere of radius $\sqrt{d}$ (concentration of measure)
+\item The target has support on $[-a,a]^d$, a hypercube of side length $2a$
+\end{itemize}
+
+The key insight is the ratio of volumes:
+\begin{itemize}
+\item Volume of $d$-dimensional hypercube: $(2a)^d$
+\item "Effective volume" where normal proposal has significant mass: $\approx (2\pi)^{d/2}$
+\end{itemize}
+
+The worst-case ratio occurs at the boundary of the target support:
+$$M \approx \frac{\text{const}}{(2\pi)^{-d/2}\exp(-a^2d/2)} = \text{const} \cdot (2\pi)^{d/2}\exp(a^2d/2)$$
+
+Therefore, acceptance rate scales as:
+$$\text{Acceptance rate} \approx (2\pi)^{-d/2}\exp(-a^2d/2)$$
+
+This decreases exponentially in dimension $d$.
+
+\textbf{Practical Implications:}
+\begin{itemize}
+\item For $d=10, a=2$: acceptance rate $\approx 10^{-19}$
+\item Rejection sampling becomes computationally infeasible for moderate $d$
+\item This motivates the development of MCMC methods for high-dimensional problems
+\end{itemize}
+
+\section{Advanced Implementation Challenges}
+
+\question{3}
+\textbf{Adaptive Proposal Tuning}: Implement an adaptive rejection sampling algorithm where the bound $M$ is iteratively refined during sampling. Design a strategy that maintains theoretical correctness while improving efficiency. How would you handle the case where your initial bound $M$ is too small? What data structures would you use to efficiently update the bound, and how would you ensure the algorithm remains unbiased?
+
+\solution{3}
+\textbf{Adaptive Algorithm Design:}
+
+\begin{algorithm}
+\caption{Adaptive Rejection Sampling}
+\begin{algorithmic}[1]
+\STATE Initialize: $M_0$ (initial bound), $S = \{\}$ (sample set), $R = \{\}$ (ratio history)
+\STATE $M \gets M_0$
+\WHILE{need more samples}
+    \STATE Draw $X \sim q$
+    \STATE Compute $r = \pi(X)/q(X)$
+    \IF{$r > M$}
+        \STATE \textbf{Bound violation detected}
+        \STATE $M \gets \max(M, r \cdot 1.1)$ \texttt{// Safety margin}
+        \STATE \textbf{Retroactive correction}: Re-evaluate all previous samples
+        \STATE Continue without accepting current sample
+    \ELSE
+        \STATE Draw $U \sim \text{Uniform}[0,1]$
+        \IF{$U \leq r/M$}
+            \STATE Accept $X$, add to $S$
+        \ENDIF
+    \ENDIF
+    \STATE Update $R \gets R \cup \{r\}$
+\ENDWHILE
+\end{algorithmic}
+\end{algorithm}
+
+\textbf{Handling Insufficient Initial Bound:}
+
+When $M_0$ is too small:
+\begin{enumerate}
+\item \textbf{Detection}: If $\pi(x)/q(x) > M$, bound violation occurs
+\item \textbf{Correction}: Update $M \gets \max(M, \pi(x)/q(x) \cdot c)$ where $c > 1$ (safety factor)
+\item \textbf{Retroactive validation}: All previously accepted samples must be re-evaluated with new $M$
+\end{enumerate}
+
+\textbf{Data Structures:}
+\begin{itemize}
+\item \textbf{Priority Queue}: Store $(\pi(x)/q(x), x)$ pairs to efficiently find maximum ratio
+\item \textbf{Rolling Statistics}: Maintain running estimates of ratio quantiles
+\item \textbf{Sample Buffer}: Store all samples with their ratios for retroactive correction
+\end{itemize}
+
+\textbf{Maintaining Unbiasedness:}
+
+Critical requirement: The final acceptance probability for any $x$ must be $\pi(x)/(M_{final} \cdot q(x))$.
+
+Strategy:
+\begin{enumerate}
+\item Track the final bound $M_{final}$ used
+\item For any previously accepted sample with ratio $r$ under bound $M_{old}$:
+   - Re-accept with probability $M_{old}/M_{final}$
+   - This ensures correct final acceptance probability
+\end{enumerate}
+
+\textbf{Implementation Pseudocode:}
+\begin{lstlisting}[language=Python, basicstyle=\small]
+def adaptive_rejection_sampling(n_samples):
+    M = initial_bound
+    samples = []
+    ratios = []
+    
+    while len(samples) < n_samples:
+        x = sample_from_q()
+        r = pi(x) / q(x)
+        
+        if r > M:
+            # Bound update
+            M_old = M
+            M = r * 1.1
+            
+            # Retroactive correction
+            samples = [s for s, r_old in zip(samples, ratios) 
+                      if random.random() <= M_old/M]
+            ratios = ratios[:len(samples)]
+        
+        if random.random() <= r/M:
+            samples.append(x)
+            ratios.append(r)
+    
+    return samples
+\end{lstlisting}
+
+\question{4}
+\textbf{Numerical Stability in Importance Sampling}: When implementing normalized importance sampling with very small or very large unnormalized weights $\tilde{w}(x) = \tilde{\pi}(x)/\tilde{q}(x)$, numerical overflow/underflow becomes critical. Design a numerically stable algorithm using log-space arithmetic. Show how to compute the normalized weights and handle the case where all weights underflow to zero. What early warning signs would indicate numerical problems?
+
+\solution{4}
+\textbf{Log-Space Algorithm:}
+
+Instead of computing $\tilde{w}_i = \tilde{\pi}(x_i)/\tilde{q}(x_i)$, work with:
+$$\log \tilde{w}_i = \log \tilde{\pi}(x_i) - \log \tilde{q}(x_i)$$
+
+\textbf{Stable Normalization:}
+
+The normalized weights are:
+$$w_i = \frac{\tilde{w}_i}{\sum_{j=1}^n \tilde{w}_j} = \frac{\exp(\log \tilde{w}_i)}{\sum_{j=1}^n \exp(\log \tilde{w}_j)}$$
+
+Use the log-sum-exp trick:
+\begin{align}
+\log\left(\sum_{j=1}^n \exp(\log \tilde{w}_j)\right) &= \log\left(\sum_{j=1}^n \tilde{w}_j\right)\\
+&= \max_j(\log \tilde{w}_j) + \log\left(\sum_{j=1}^n \exp(\log \tilde{w}_j - \max_k(\log \tilde{w}_k))\right)
+\end{align}
+
+\textbf{Implementation:}
+\begin{lstlisting}[language=Python, basicstyle=\small]
+import numpy as np
+
+def stable_normalize_weights(log_weights):
+    # log_weights: array of log(w_tilde_i)
+    
+    # Find maximum for numerical stability
+    max_log_weight = np.max(log_weights)
+    
+    # Compute log(sum(w_tilde_i))
+    log_sum = max_log_weight + np.log(
+        np.sum(np.exp(log_weights - max_log_weight)))
+    
+    # Compute normalized weights in log space
+    log_normalized = log_weights - log_sum
+    
+    # Convert back to linear space
+    normalized_weights = np.exp(log_normalized)
+    
+    return normalized_weights, log_sum
+
+def importance_sampling_stable(samples, log_weights, phi):
+    # Stable normalization
+    weights, log_sum = stable_normalize_weights(log_weights)
+    
+    # Check for numerical issues
+    effective_samples = 1.0 / np.sum(weights**2)
+    if effective_samples < len(samples) * 0.01:
+        print("Warning: Very low effective sample size")
+    
+    # Compute estimate
+    return np.sum(phi(samples) * weights)
+\end{lstlisting}
+
+\textbf{Handling Complete Underflow:}
+
+When all weights underflow to zero:
+\begin{enumerate}
+\item \textbf{Detection}: Check if $\max(\log \tilde{w}_i) < -700$ (approximate double precision limit)
+\item \textbf{Response}: 
+   \begin{itemize}
+   \item Rescale by subtracting the median log weight
+   \item Use higher precision arithmetic (long double)
+   \item Report that the proposal is severely mismatched
+   \end{itemize}
+\end{enumerate}
+
+\textbf{Early Warning Signs:}
+\begin{enumerate}
+\item \textbf{Dynamic range}: If $\max(\log \tilde{w}_i) - \min(\log \tilde{w}_i) > 50$, numerical issues likely
+\item \textbf{Effective sample size}: $\text{ESS} = 1/\sum w_i^2 < 0.1n$ indicates weight degeneracy
+\item \textbf{Weight concentration}: If largest weight $> 0.5$, distribution is dominated by one sample
+\item \textbf{Gradient indicators}: Monitor $\|\nabla \log \tilde{w}_i\|$ for gradient explosion
+\end{enumerate}
+
+\question{5}
+\textbf{Efficient Weight Storage and Resampling}: For importance sampling with $n = 10^6$ samples, memory becomes a constraint when storing both samples and weights. Design a memory-efficient streaming algorithm that can compute multiple expectations $E[\phi_i(X)]$ simultaneously without storing all samples. How would you handle the case where you need to resample according to the importance weights?
+
+\solution{5}
+\textbf{Streaming Algorithm for Multiple Expectations:}
+
+\begin{algorithm}
+\caption{Memory-Efficient Streaming Importance Sampling}
+\begin{algorithmic}[1]
+\STATE Initialize: $\{S_i = 0\}$ (running sums), $W = 0$ (weight sum), $k = 0$ (sample count)
+\WHILE{$k < n$}
+    \STATE Draw $x_k \sim q$
+    \STATE Compute $w_k = \tilde{\pi}(x_k)/\tilde{q}(x_k)$
+    \STATE $W \gets W + w_k$
+    \FOR{each function $\phi_i$}
+        \STATE $S_i \gets S_i + \phi_i(x_k) \cdot w_k$
+    \ENDFOR
+    \STATE $k \gets k + 1$
+    \STATE \textbf{Discard} $x_k, w_k$ \texttt{// No storage}
+\ENDWHILE
+\STATE \textbf{Return}: $\{\hat{I}_i = S_i/W\}$
+\end{algorithmic}
+\end{algorithm}
+
+\textbf{Memory Requirements:}
+\begin{itemize}
+\item Standard approach: $O(n)$ for samples + $O(n)$ for weights
+\item Streaming approach: $O(m)$ where $m$ is number of expectations
+\item Reduction: From $O(n)$ to $O(1)$ per expectation
+\end{itemize}
+
+\textbf{Handling Resampling Requirement:}
+
+When resampling is needed, use reservoir sampling with weights:
+
+\begin{algorithm}
+\caption{Weighted Reservoir Sampling}
+\begin{algorithmic}[1]
+\STATE Initialize: $R = \{\}$ (reservoir of size $m \ll n$), $W_{total} = 0$
+\WHILE{streaming samples}
+    \STATE Draw $x_k \sim q$, compute $w_k$
+    \STATE $W_{total} \gets W_{total} + w_k$
+    \IF{$|R| < m$}
+        \STATE $R \gets R \cup \{(x_k, w_k)\}$
+    \ELSE
+        \STATE $p = \frac{w_k \cdot m}{W_{total}}$ \texttt{// Inclusion probability}
+        \IF{$\text{random}() < p$}
+            \STATE Replace random element in $R$ with $(x_k, w_k)$
+        \ENDIF
+    \ENDIF
+\ENDWHILE
+\end{algorithmic}
+\end{algorithm}
+
+\textbf{Advanced Memory-Efficient Strategies:}
+
+\begin{enumerate}
+\item \textbf{Sketch-based methods}: Use Count-Min sketches for approximate quantile computation
+\item \textbf{Hierarchical sampling}: 
+   \begin{itemize}
+   \item First pass: Compute weight statistics
+   \item Second pass: Importance sample with known normalizing constant
+   \end{itemize}
+\item \textbf{Adaptive thresholding}: Only store samples with weights above a threshold
+\end{enumerate}
+
+\textbf{Implementation for Multiple Expectations:}
+\begin{lstlisting}[language=Python, basicstyle=\small]
+class StreamingImportanceSampler:
+    def __init__(self, functions):
+        self.functions = functions
+        self.sums = [0.0] * len(functions)
+        self.weight_sum = 0.0
+        self.count = 0
+        
+    def add_sample(self, x):
+        w = self.compute_weight(x)
+        self.weight_sum += w
+        
+        for i, func in enumerate(self.functions):
+            self.sums[i] += func(x) * w
+        
+        self.count += 1
+        # x and w are automatically garbage collected
+    
+    def get_estimates(self):
+        return [s / self.weight_sum for s in self.sums]
+    
+    def effective_sample_size(self):
+        # Estimate ESS without storing weights
+        # Use running variance estimation
+        pass
+\end{lstlisting}
+
+\question{6}
+\textbf{Parallel Implementation Challenges}: When implementing rejection sampling or importance sampling in parallel across multiple processors, the random number generation and load balancing become critical. Design a parallel algorithm that maintains reproducibility and handles the case where different processors have very different acceptance rates. How would you aggregate results while maintaining numerical stability?
+
+\solution{6}
+\textbf{Parallel Architecture Design:}
+
+\begin{algorithm}
+\caption{Parallel Importance Sampling with Load Balancing}
+\begin{algorithmic}[1]
+\STATE \textbf{Master Process:}
+\STATE Distribute seeds: $\{seed_1, \ldots, seed_P\}$ to $P$ workers
+\STATE Initialize work queues: $\{n_1, \ldots, n_P\}$ with $\sum n_i = n$
+\STATE \textbf{Worker Process $p$:}
+\STATE Initialize RNG with $seed_p$
+\STATE $local\_sum = 0, local\_weights = 0, samples\_done = 0$
+\WHILE{$samples\_done < n_p$}
+    \STATE Generate $x \sim q$ using local RNG
+    \STATE Compute $w = \tilde{\pi}(x)/\tilde{q}(x)$
+    \STATE $local\_sum \mathrel{+}= \phi(x) \cdot w$
+    \STATE $local\_weights \mathrel{+}= w$
+    \STATE $samples\_done \mathrel{+}= 1$
+    \IF{$samples\_done \bmod 1000 = 0$}
+        \STATE Report progress to master
+    \ENDIF
+\ENDWHILE
+\STATE Send $(local\_sum, local\_weights)$ to master
+\end{algorithmic}
+\end{algorithm}
+
+\textbf{Reproducibility Strategy:}
+\begin{enumerate}
+\item \textbf{Deterministic seeding}: Use a master seed to generate worker seeds
+\item \textbf{Fixed partitioning}: Assign specific sample indices to workers
+\item \textbf{Mersenne Twister}: Use jump-ahead capability for non-overlapping streams
+\end{enumerate}
+
+\begin{lstlisting}[language=Python, basicstyle=\small]
+def parallel_importance_sampling(n_total, n_workers):
+    # Generate non-overlapping RNG streams
+    seeds = [master_seed + i * 1000000 for i in range(n_workers)]
+    
+    # Fixed work assignment for reproducibility
+    work_per_worker = [n_total // n_workers] * n_workers
+    for i in range(n_total % n_workers):
+        work_per_worker[i] += 1
+    
+    # Launch workers
+    results = parallel_map(worker_function, 
+                          zip(seeds, work_per_worker))
+    
+    # Aggregate results
+    return stable_aggregate(results)
+\end{lstlisting}
+
+\textbf{Load Balancing for Variable Acceptance Rates:}
+
+For rejection sampling where acceptance rates vary:
+
+\begin{enumerate}
+\item \textbf{Dynamic work stealing}:
+   \begin{itemize}
+   \item Workers report acceptance rates periodically
+   \item Master redistributes work from slow to fast workers
+   \item Maintain deterministic order for reproducibility
+   \end{itemize}
+\item \textbf{Adaptive batch sizes}:
+   \begin{itemize}
+   \item Start with small batches
+   \item Increase batch size as acceptance rate stabilizes
+   \item Workers request new work when batch completes
+   \end{itemize}
+\end{enumerate}
+
+\textbf{Numerically Stable Aggregation:}
+
+Use a tree-based reduction for log-weights:
+
+\begin{algorithm}
+\caption{Stable Parallel Aggregation}
+\begin{algorithmic}[1]
+\STATE Each worker computes: $(S_i, \log W_i)$ where $S_i = \sum \phi(x) \cdot w(x)$, $W_i = \sum w(x)$
+\STATE \textbf{Tree reduction:}
+\FOR{$level = 0$ to $\log_2 P$}
+    \FOR{pairs $(i, j)$ at current level}
+        \STATE $\log W_{merged} = \text{logaddexp}(\log W_i, \log W_j)$
+        \STATE $W_{merged} = \exp(\log W_{merged})$
+        \STATE $S_{merged} = S_i + S_j$
+    \ENDFOR
+\ENDFOR
+\STATE Final estimate: $S_{total} / W_{total}$
+\end{algorithmic}
+\end{algorithm}
+
+\begin{lstlisting}[language=Python, basicstyle=\small]
+def logaddexp_stable(log_a, log_b):
+    """Stable computation of log(exp(log_a) + exp(log_b))"""
+    if log_a > log_b:
+        return log_a + np.log1p(np.exp(log_b - log_a))
+    else:
+        return log_b + np.log1p(np.exp(log_a - log_b))
+
+def aggregate_worker_results(results):
+    # results: list of (sum_i, log_weight_i) tuples
+    
+    total_sum = sum(r[0] for r in results)
+    log_weights = [r[1] for r in results]
+    
+    # Stable aggregation of weights
+    log_total_weight = log_weights[0]
+    for log_w in log_weights[1:]:
+        log_total_weight = logaddexp_stable(log_total_weight, log_w)
+    
+    total_weight = np.exp(log_total_weight)
+    return total_sum / total_weight
+\end{lstlisting}
+
+\section{Convergence Theory}
+
+\question{7}
+\textbf{Effective Sample Size}: For normalized importance sampling, derive an expression for the "effective sample size" in terms of the weight variance. Show how this relates to the Monte Carlo standard error and explain why having a few very large weights can be worse than having many moderately large weights.
+
+\solution{7}
+\textbf{Derivation of Effective Sample Size:}
+
+For normalized importance sampling, the estimator is:
+$$\hat{I}^{NIS}_n = \frac{\sum_{i=1}^n \phi(X_i)w(X_i)}{\sum_{i=1}^n w(X_i)} = \frac{\sum_{i=1}^n \phi(X_i)\tilde{w}(X_i)}{\sum_{i=1}^n \tilde{w}(X_i)}$$
+
+The effective sample size is defined as:
+$$\text{ESS} = \frac{1}{\sum_{i=1}^n W_i^2}$$
+where $W_i = w_i/\sum_{j=1}^n w_j$ are the normalized weights.
+
+\textbf{Relationship to Weight Variance:}
+
+Since $\sum_{i=1}^n W_i = 1$, we have:
+$$\text{Var}(W) = E[W^2] - E[W]^2 = E[W^2] - \frac{1}{n^2}$$
+
+Therefore:
+$$\sum_{i=1}^n W_i^2 = nE[W^2] = n\left(\text{Var}(W) + \frac{1}{n^2}\right)$$
+
+For large $n$:
+$$\text{ESS} \approx \frac{1}{n \cdot \text{Var}(W)}$$
+
+\textbf{Connection to Monte Carlo Standard Error:}
+
+The asymptotic variance of the NIS estimator is:
+$$\text{Var}[\hat{I}^{NIS}_n] \approx \frac{1}{n} \int \frac{(\phi(x) - I)^2\pi^2(x)}{q(x)}dx$$
+
+For standard Monte Carlo with effective sample size:
+$$\text{Var}[\hat{I}^{MC}_{ESS}] = \frac{1}{\text{ESS}} \text{Var}_\pi[\phi(X)]$$
+
+The relationship is:
+$$\text{SE}^{NIS} \approx \text{SE}^{MC} \sqrt{\frac{n}{\text{ESS}}}$$
+
+\textbf{Why Few Large Weights Are Problematic:}
+
+Consider two scenarios with $n=1000$ samples:
+
+\textbf{Scenario A} (Few large weights):
+\begin{itemize}
+\item Weights: $(0.99, 0.001, 0.001, \ldots, 0.001)$
+\item $\text{ESS} = 1/(0.99^2 + 999 \times 0.001^2) \approx 1.02$
+\end{itemize}
+
+\textbf{Scenario B} (Many moderate weights):
+\begin{itemize}
+\item Weights: $(0.1, 0.1, \ldots, 0.1)$ (10 nonzero weights)
+\item $\text{ESS} = 1/(10 \times 0.1^2) = 10$
+\end{itemize}
+
+\textbf{Mathematical Explanation:}
+
+The problem with few large weights:
+\begin{enumerate}
+\item \textbf{High variance}: $\text{Var}(W) = E[W^2] - E[W]^2$ is maximized when weights are concentrated
+\item \textbf{Poor exploration}: Most of the estimate comes from very few samples
+\item \textbf{Instability}: Removing one large-weight sample dramatically changes the estimate
+\item \textbf{Central limit theorem failure}: CLT requires many contributing terms
+\end{enumerate}
+
+\textbf{Optimal weight distribution}: 
+Uniform weights $W_i = 1/n$ give $\text{ESS} = n$, which is optimal.
+
+\question{8}
+\textbf{Acceptance Rate Optimization}: In rejection sampling, if you have a parametric family of proposal distributions $q_\theta$, derive the optimal parameter $\theta^*$ that minimizes the expected number of trials. Show that this is not necessarily the same $\theta$ that minimizes $\sup_x \pi(x)/q_\theta(x)$.
+
+\solution{8}
+\textbf{Expected Number of Trials:}
+
+For rejection sampling with proposal $q_\theta$ and bound $M_\theta = \sup_x \pi(x)/q_\theta(x)$, the expected number of trials is $E[T] = M_\theta$.
+
+The optimal parameter minimizes:
+$$\theta^* = \arg\min_\theta M_\theta = \arg\min_\theta \sup_x \frac{\pi(x)}{q_\theta(x)}$$
+
+\textbf{Alternative Optimality Criterion:}
+
+However, we might instead minimize the expected computational cost:
+$$C(\theta) = M_\theta \cdot (\text{cost of generating from } q_\theta + \text{cost of evaluating } \pi/q_\theta)$$
+
+Or minimize the variance of the waiting time:
+$$\text{Var}[T] = M_\theta(M_\theta - 1)$$
+
+\textbf{Concrete Example:}
+
+Consider $\pi(x) = \frac{1}{2}e^{-|x|}$ (Laplace distribution) and proposal family:
+$$q_\theta(x) = \frac{\theta}{2}e^{-\theta|x|}, \quad \theta > 0$$
+
+\textbf{Case 1: Minimizing $M_\theta$}
+
+$$\frac{\pi(x)}{q_\theta(x)} = \frac{1/2 \cdot e^{-|x|}}{\theta/2 \cdot e^{-\theta|x|}} = \frac{1}{\theta}e^{(\theta-1)|x|}$$
+
+For $\theta > 1$: $\sup_x \pi(x)/q_\theta(x) = \infty$ (unbounded)
+For $\theta \leq 1$: $\sup_x \pi(x)/q_\theta(x) = 1/\theta$ (achieved at $x = 0$)
+
+Therefore: $\theta^*_{sup} = 1$ minimizes $M_\theta$.
+
+\textbf{Case 2: Minimizing Expected Cost}
+
+Suppose generating from $q_\theta$ has cost $c_1 + c_2/\theta$ (inverse transform becomes expensive for small $\theta$).
+
+Total expected cost:
+$$C(\theta) = \frac{1}{\theta} \cdot (c_1 + c_2/\theta) = \frac{c_1}{\theta} + \frac{c_2}{\theta^2}$$
+
+Optimizing: $\frac{dC}{d\theta} = -\frac{c_1}{\theta^2} - \frac{2c_2}{\theta^3} = 0$
+
+This gives no finite minimum, but practical constraints would give $\theta^*_{cost} \neq 1$.
+
+\textbf{Case 3: Robust Optimization}
+
+Instead of minimizing worst-case bound, minimize expected bound:
+$$E_\pi[\pi(X)/q_\theta(X)] = \int \frac{\pi^2(x)}{q_\theta(x)}dx$$
+
+For our example:
+$$E_\pi[\pi(X)/q_\theta(X)] = \int \frac{(1/2)^2 e^{-2|x|}}{(\theta/2)e^{-\theta|x|}}dx = \frac{1/2}{\theta} \int e^{-(2-\theta)|x|}dx$$
+
+For $\theta < 2$: This integral is finite and minimized at $\theta^*_{expected} = 2 \neq 1$.
+
+\textbf{General Principle:}
+
+The optimal $\theta$ depends on the objective function:
+\begin{itemize}
+\item Minimizing $\sup_x \pi(x)/q_\theta(x)$: Focuses on worst-case performance
+\item Minimizing $E_\pi[\pi(X)/q_\theta(X)]$: Focuses on average performance  
+\item Minimizing total computational cost: Includes implementation overhead
+\item Robust optimization: Accounts for uncertainty in $\pi$
+\end{itemize}
+
+Different objectives lead to different optimal parameters, illustrating that $\theta^*$ is not unique.
+
+\section{Advanced Applications}
+
+\question{9}
+\textbf{Multi-stage Sampling Strategy}: Design a two-stage importance sampling scheme where you first use a crude proposal to estimate the normalizing constant, then use this estimate to construct a better proposal for the second stage. Analyze the bias and variance of this estimator, and determine when it outperforms single-stage methods.
+
+\solution{9}
+\textbf{Two-Stage Algorithm Design:}
+
+\begin{algorithm}
+\caption{Two-Stage Importance Sampling}
+\begin{algorithmic}[1]
+\STATE \textbf{Stage 1:} Rough estimation with $n_1$ samples
+\STATE Use crude proposal $q_1(x)$
+\STATE Compute: $\hat{Z}_1 = \frac{1}{n_1}\sum_{i=1}^{n_1} \frac{\tilde{\pi}(X_i^{(1)})}{\tilde{q}_1(X_i^{(1)})}$ where $X_i^{(1)} \sim q_1$
+\STATE \textbf{Stage 2:} Refined estimation with $n_2$ samples
+\STATE Construct improved proposal: $q_2(x) = \frac{\tilde{\pi}(x)}{\hat{Z}_1}$
+\STATE Compute: $\hat{I}_2 = \frac{1}{n_2}\sum_{j=1}^{n_2} \phi(X_j^{(2)}) \frac{\tilde{\pi}(X_j^{(2)})/\hat{Z}_1}{\tilde{q}_2(X_j^{(2)})}$ where $X_j^{(2)} \sim q_2$
+\STATE Since $q_2(x) = \tilde{\pi}(x)/\hat{Z}_1$, we have: $\hat{I}_2 = \frac{1}{n_2}\sum_{j=1}^{n_2} \phi(X_j^{(2)})$
+\end{algorithmic}
+\end{algorithm}
+
+\textbf{Bias Analysis:}
+
+The two-stage estimator is:
+$$\hat{I}_{2s} = \frac{1}{n_2}\sum_{j=1}^{n_2} \phi(X_j^{(2)})$$
+
+where $X_j^{(2)}$ are drawn from $q_2(x) = \tilde{\pi}(x)/\hat{Z}_1$.
+
+\textbf{Conditional on Stage 1:}
+$$E[\hat{I}_{2s}|\hat{Z}_1] = E_{q_2}[\phi(X)] = \int \phi(x) \frac{\tilde{\pi}(x)}{\hat{Z}_1}dx = \frac{Z \cdot I}{\hat{Z}_1}$$
+
+\textbf{Overall Bias:}
+$$E[\hat{I}_{2s}] = E\left[\frac{Z \cdot I}{\hat{Z}_1}\right] = Z \cdot I \cdot E\left[\frac{1}{\hat{Z}_1}\right]$$
+
+Since $E[1/\hat{Z}_1] \neq 1/E[\hat{Z}_1]$ (Jensen's inequality), the estimator is biased.
+
+Using Taylor expansion around $Z$:
+$$E\left[\frac{1}{\hat{Z}_1}\right] \approx \frac{1}{Z}\left(1 + \frac{\text{Var}[\hat{Z}_1]}{Z^2}\right)$$
+
+Therefore:
+$$\text{Bias}[\hat{I}_{2s}] \approx I \cdot \frac{\text{Var}[\hat{Z}_1]}{Z^2}$$
+
+\textbf{Variance Analysis:}
+
+Using the law of total variance:
+$$\text{Var}[\hat{I}_{2s}] = E[\text{Var}[\hat{I}_{2s}|\hat{Z}_1]] + \text{Var}[E[\hat{I}_{2s}|\hat{Z}_1]]$$
+
+\textbf{First term:}
+$$E[\text{Var}[\hat{I}_{2s}|\hat{Z}_1]] = E\left[\frac{1}{n_2}\text{Var}_{q_2}[\phi(X)]\right]$$
+
+Since $q_2 \propto \tilde{\pi}$, if $\phi$ is well-matched to $\pi$, this variance is small.
+
+\textbf{Second term:}
+$$\text{Var}[E[\hat{I}_{2s}|\hat{Z}_1]] = \text{Var}\left[\frac{Z \cdot I}{\hat{Z}_1}\right] \approx (Z \cdot I)^2 \frac{\text{Var}[\hat{Z}_1]}{Z^4} = I^2 \frac{\text{Var}[\hat{Z}_1]}{Z^2}$$
+
+\textbf{Comparison with Single-Stage:}
+
+Single-stage importance sampling with $n = n_1 + n_2$ samples and good proposal $q$:
+$$\text{Var}[\hat{I}_{SS}] = \frac{1}{n}\int \frac{(\phi(x) - I)^2\pi^2(x)}{q(x)}dx$$
+
+Two-stage outperforms when:
+$$\text{Var}[\hat{I}_{2s}] + \text{Bias}^2[\hat{I}_{2s}] < \text{Var}[\hat{I}_{SS}]$$
+
+\textbf{Optimal Allocation:}
+
+The optimal choice of $n_1$ minimizes total MSE. Taking derivative:
+$$\frac{d}{dn_1}[\text{Var}[\hat{I}_{2s}] + \text{Bias}^2[\hat{I}_{2s}]] = 0$$
+
+This typically gives $n_1 \propto \sqrt{n_2}$, meaning most samples should go to Stage 2.
+
+\textbf{When Two-Stage Outperforms:}
+\begin{enumerate}
+\item When crude proposal $q_1$ is much easier to sample from than good proposal
+\item When constructing good proposal requires expensive parameter estimation
+\item When target has multiple modes and adaptive location is needed
+\item When $n_1 \ll n_2$ and Stage 1 provides good approximation to $\pi$
+\end{enumerate}
+
+\question{10}
+\textbf{Diagnostic and Monitoring Systems}: Develop a comprehensive diagnostic framework for detecting when importance sampling is failing in practice. Your system should monitor effective sample size, weight degeneracy, and convergence diagnostics in real-time. Design specific tests for detecting infinite variance, proposal-target mismatch, and numerical instability. How would you automatically adjust the sampling strategy based on these diagnostics?
+
+\solution{10}
+\textbf{Comprehensive Diagnostic Framework:}
+
+\begin{algorithm}
+\caption{Real-Time Importance Sampling Diagnostics}
+\begin{algorithmic}[1]
+\STATE Initialize monitoring variables
+\STATE $ESS_{history} = []$, $weight_{stats} = \{\}$, $convergence_{buffer} = []$
+\WHILE{sampling in progress}
+    \STATE Generate sample $x_i$, compute weight $w_i$
+    \STATE Update diagnostics every $B$ samples (batch size)
+    \IF{$i \bmod B = 0$}
+        \STATE Run diagnostic tests
+        \STATE Update sampling strategy if needed
+        \STATE Log warnings and statistics
+    \ENDIF
+\ENDWHILE
+\end{algorithmic}
+\end{algorithm}
+
+\textbf{1. Effective Sample Size Monitoring:}
+
+\begin{lstlisting}[language=Python, basicstyle=\small]
+class ESSMonitor:
+    def __init__(self, warning_threshold=0.1, critical_threshold=0.01):
+        self.warning_thresh = warning_threshold
+        self.critical_thresh = critical_threshold
+        self.ess_history = []
+        
+    def update(self, weights):
+        normalized_weights = weights / np.sum(weights)
+        ess = 1.0 / np.sum(normalized_weights**2)
+        relative_ess = ess / len(weights)
+        self.ess_history.append(relative_ess)
+        
+        # Diagnostic tests
+        if relative_ess < self.critical_thresh:
+            return "CRITICAL: ESS < 1%"
+        elif relative_ess < self.warning_thresh:
+            return "WARNING: ESS < 10%"
+        else:
+            return "OK"
+    
+    def trend_analysis(self):
+        """Detect if ESS is decreasing over time"""
+        if len(self.ess_history) < 10:
+            return "INSUFFICIENT_DATA"
+            
+        recent = self.ess_history[-10:]
+        slope = np.polyfit(range(10), recent, 1)[0]
+        
+        if slope < -0.01:
+            return "DEGRADING_ESS"
+        return "STABLE"
+\end{lstlisting}
+
+\textbf{2. Weight Degeneracy Detection:}
+
+\begin{lstlisting}[language=Python, basicstyle=\small]
+class WeightDegeneracyDetector:
+    def __init__(self):
+        self.max_weight_ratio_history = []
+        self.weight_entropy_history = []
+        
+    def diagnose(self, weights):
+        w_norm = weights / np.sum(weights)
+        
+        # Test 1: Maximum weight concentration
+        max_weight = np.max(w_norm)
+        max_ratio = max_weight * len(weights)  # Should be \approx 1 for uniform
+        
+        # Test 2: Weight entropy (higher is better)
+        entropy = -np.sum(w_norm * np.log(w_norm + 1e-16))
+        max_entropy = np.log(len(weights))
+        relative_entropy = entropy / max_entropy
+        
+        # Test 3: Participation ratio
+        participation = 1.0 / np.sum(w_norm**2)
+        
+        diagnostics = {
+            'max_weight_ratio': max_ratio,
+            'relative_entropy': relative_entropy,
+            'participation_ratio': participation,
+            'status': self._assess_health(max_ratio, relative_entropy)
+        }
+        
+        return diagnostics
+    
+    def _assess_health(self, max_ratio, entropy):
+        if max_ratio > 50:  # One weight dominates
+            return "SEVERE_DEGENERACY"
+        elif entropy < 0.1:  # Very low entropy
+            return "MODERATE_DEGENERACY"
+        else:
+            return "HEALTHY"
+\end{lstlisting}
+
+\textbf{3. Infinite Variance Detection:}
+
+\begin{lstlisting}[language=Python, basicstyle=\small]
+class InfiniteVarianceDetector:
+    def __init__(self, tail_samples=1000):
+        self.tail_samples = tail_samples
+        self.log_weights = []
+        
+    def test_infinite_variance(self, log_weights):
+        """Test for infinite variance using tail behavior"""
+        if len(log_weights) < self.tail_samples:
+            return "INSUFFICIENT_DATA"
+        
+        # Sort log weights in descending order
+        sorted_log_w = np.sort(log_weights)[::-1]
+        
+        # Test 1: Pareto tail test
+        top_weights = sorted_log_w[:100]
+        if len(top_weights) > 10:
+            # Fit Pareto: log(1-F(x)) \approx -\alpha log(x) + const
+            # If \alpha \leq 2, variance is infinite
+            x = np.exp(top_weights)
+            y = np.log(np.arange(1, len(top_weights)+1) / len(log_weights))
+            
+            if len(x) > 5 and np.std(np.log(x)) > 0:
+                alpha_est = -np.polyfit(np.log(x), y, 1)[0]
+                
+                if alpha_est < 2.1:  # Small buffer
+                    return f"INFINITE_VARIANCE_SUSPECTED (\alpha\approx{alpha_est:.2f})"
+        
+        # Test 2: Weight growth test
+        if len(self.log_weights) > 500:
+            recent_max = np.max(self.log_weights[-100:])
+            older_max = np.max(self.log_weights[-500:-400])
+            
+            if recent_max - older_max > 10:  # Exponential growth
+                return "EXPLODING_WEIGHTS"
+        
+        return "FINITE_VARIANCE_LIKELY"
+    
+    def update(self, new_log_weights):
+        self.log_weights.extend(new_log_weights)
+        # Keep only recent history to save memory
+        if len(self.log_weights) > 10000:
+            self.log_weights = self.log_weights[-5000:]
+\end{lstlisting}
+
+\textbf{4. Proposal-Target Mismatch Detection:}
+
+\begin{lstlisting}[language=Python, basicstyle=\small]
+class ProposalMismatchDetector:
+    def __init__(self):
+        self.sample_history = []
+        self.weight_history = []
+        
+    def diagnose_mismatch(self, samples, log_weights):
+        """Multiple tests for proposal-target mismatch"""
+        diagnostics = {}
+        
+        # Test 1: Spatial concentration of high weights
+        high_weight_idx = log_weights > np.percentile(log_weights, 95)
+        if np.sum(high_weight_idx) > 5:
+            high_weight_samples = samples[high_weight_idx]
+            
+            # Check if high-weight samples are spatially clustered
+            if samples.ndim > 1:  # Multivariate case
+                distances = pdist(high_weight_samples)
+                avg_distance = np.mean(distances)
+                
+                all_distances = pdist(samples)
+                global_avg = np.mean(all_distances)
+                
+                if avg_distance < 0.1 * global_avg:
+                    diagnostics['spatial_mismatch'] = "HIGH_WEIGHTS_CLUSTERED"
+        
+        # Test 2: Weight autocorrelation (for sequential sampling)
+        if len(log_weights) > 100:
+            lag1_corr = np.corrcoef(log_weights[:-1], log_weights[1:])[0,1]
+            if abs(lag1_corr) > 0.3:
+                diagnostics['temporal_correlation'] = f"HIGH_AUTOCORR_{lag1_corr:.2f}"
+        
+        # Test 3: Proposal coverage test
+        weight_cv = np.std(log_weights) / np.mean(log_weights)
+        if weight_cv > 3:
+            diagnostics['coverage'] = "POOR_PROPOSAL_COVERAGE"
+            
+        return diagnostics
+\end{lstlisting}
+
+\textbf{5. Convergence Monitoring:}
+
+\begin{lstlisting}[language=Python, basicstyle=\small]
+class ConvergenceMonitor:
+    def __init__(self, target_functions):
+        self.target_functions = target_functions
+        self.estimates_history = {i: [] for i in range(len(target_functions))}
+        
+    def update_and_test(self, samples, weights):
+        """Update estimates and test convergence"""
+        current_estimates = {}
+        
+        for i, func in enumerate(self.target_functions):
+            # Compute current estimate
+            estimate = np.sum(func(samples) * weights) / np.sum(weights)
+            self.estimates_history[i].append(estimate)
+            current_estimates[i] = estimate
+        
+        # Convergence tests
+        convergence_status = {}
+        
+        for i in range(len(self.target_functions)):
+            history = self.estimates_history[i]
+            if len(history) > 20:
+                # Test 1: Relative stability
+                recent_std = np.std(history[-10:])
+                recent_mean = np.mean(history[-10:])
+                
+                if recent_mean != 0:
+                    rel_std = recent_std / abs(recent_mean)
+                    if rel_std < 0.01:
+                        convergence_status[i] = "CONVERGED"
+                    elif rel_std > 0.1:
+                        convergence_status[i] = "UNSTABLE"
+                    else:
+                        convergence_status[i] = "CONVERGING"
+        
+        return current_estimates, convergence_status
+\end{lstlisting}
+
+\textbf{6. Automatic Strategy Adjustment:}
+
+\begin{lstlisting}[language=Python, basicstyle=\small]
+class AdaptiveSampler:
+    def __init__(self):
+        self.diagnostics = {
+            'ess': ESSMonitor(),
+            'degeneracy': WeightDegeneracyDetector(),
+            'infinite_var': InfiniteVarianceDetector(),
+            'mismatch': ProposalMismatchDetector(),
+            'convergence': ConvergenceMonitor([lambda x: x, lambda x: x**2])
+        }
+        
+    def adaptive_strategy(self, diagnostic_results):
+        """Automatically adjust sampling based on diagnostics"""
+        
+        # Strategy 1: Switch to defensive sampling
+        if (diagnostic_results['infinite_var'] == "INFINITE_VARIANCE_SUSPECTED" or
+            diagnostic_results['degeneracy']['status'] == "SEVERE_DEGENERACY"):
+            return {
+                'action': 'SWITCH_TO_DEFENSIVE',
+                'recommendation': 'Use mixture proposal or truncated weights'
+            }
+        
+        # Strategy 2: Increase sample size
+        if diagnostic_results['ess'] == "WARNING: ESS < 10%":
+            return {
+                'action': 'INCREASE_SAMPLE_SIZE',
+                'recommendation': 'Double the remaining samples'
+            }
+        
+        # Strategy 3: Restart with better proposal
+        if diagnostic_results['mismatch'].get('coverage') == "POOR_PROPOSAL_COVERAGE":
+            return {
+                'action': 'RESTART_WITH_ADAPTIVE_PROPOSAL',
+                'recommendation': 'Use preliminary samples to tune proposal'
+            }
+        
+        # Strategy 4: Continue with monitoring
+        return {
+            'action': 'CONTINUE',
+            'recommendation': 'Sampling appears healthy'
+        }
+        
+    def run_diagnostics(self, samples, weights, log_weights):
+        """Run all diagnostic tests and return comprehensive report"""
+        results = {}
+        
+        results['ess'] = self.diagnostics['ess'].update(weights)
+        results['degeneracy'] = self.diagnostics['degeneracy'].diagnose(weights)
+        results['infinite_var'] = self.diagnostics['infinite_var'].test_infinite_variance(log_weights)
+        results['mismatch'] = self.diagnostics['mismatch'].diagnose_mismatch(samples, log_weights)
+        
+        # Get recommendation
+        results['recommendation'] = self.adaptive_strategy(results)
+        
+        return results
+\end{lstlisting}
+
+\textbf{Integration Example:}
+
+\begin{lstlisting}[language=Python, basicstyle=\small]
+def monitored_importance_sampling(target, proposal, n_samples, phi_functions):
+    sampler = AdaptiveSampler()
+    
+    samples = []
+    weights = []
+    log_weights = []
+    
+    batch_size = min(1000, n_samples // 10)
+    
+    for batch in range(n_samples // batch_size):
+        # Generate batch
+        batch_samples = [proposal.sample() for _ in range(batch_size)]
+        batch_log_weights = [target.log_pdf(x) - proposal.log_pdf(x) 
+                            for x in batch_samples]
+        batch_weights = np.exp(batch_log_weights)
+        
+        samples.extend(batch_samples)
+        weights.extend(batch_weights)
+        log_weights.extend(batch_log_weights)
+        
+        # Run diagnostics
+        if len(samples) >= 2 * batch_size:
+            diagnostics = sampler.run_diagnostics(
+                np.array(samples), np.array(weights), np.array(log_weights))
+            
+            print(f"Batch {batch}: {diagnostics['recommendation']['action']}")
+            
+            # Act on recommendation
+            if diagnostics['recommendation']['action'] == 'RESTART_WITH_ADAPTIVE_PROPOSAL':
+                # Implement restart logic
+                return restart_with_better_proposal(samples, weights, target, phi_functions)
+            elif diagnostics['recommendation']['action'] == 'SWITCH_TO_DEFENSIVE':
+                # Implement defensive sampling
+                weights = np.clip(weights, 0, np.percentile(weights, 95))
+    
+    return compute_final_estimates(samples, weights, phi_functions)
+\end{lstlisting}
+
+This comprehensive framework provides real-time monitoring and automatic adaptation for importance sampling, detecting common failure modes and adjusting the strategy accordingly.
+
+\end{document}

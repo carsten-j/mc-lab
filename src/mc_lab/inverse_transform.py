@@ -295,6 +295,79 @@ class AdaptiveInverseTransformSampler(NumericalInverseTransformSampler):
         )
 
 
+class DiscreteInverseTransformSampler(BaseInverseTransformSampler):
+    """
+    Inverse transform sampler for discrete distributions.
+    Implements Algorithm 2.3 from the textbook.
+    """
+
+    def __init__(
+        self,
+        values: np.ndarray,
+        probabilities: np.ndarray,
+        random_state: Optional[int] = None,
+    ):
+        """
+        Parameters:
+        -----------
+        values : np.ndarray
+            Array of discrete values that the random variable can take.
+        probabilities : np.ndarray
+            Array of probabilities corresponding to each value.
+            Must sum to 1.0.
+        random_state : int, optional
+            Random seed for reproducibility.
+        """
+        super().__init__(random_state)
+
+        # Validate inputs
+        values = np.asarray(values)
+        probabilities = np.asarray(probabilities)
+
+        if len(values) != len(probabilities):
+            raise ValueError("values and probabilities must have the same length")
+
+        if not np.isclose(probabilities.sum(), 1.0):
+            raise ValueError("probabilities must sum to 1.0")
+
+        if np.any(probabilities < 0):
+            raise ValueError("probabilities must be non-negative")
+
+        # Store sorted values and compute cumulative probabilities
+        sorted_indices = np.argsort(values)
+        self.values = values[sorted_indices]
+        self.probabilities = probabilities[sorted_indices]
+        self.cumulative_probs = np.cumsum(self.probabilities)
+
+        # Ensure the last cumulative probability is exactly 1.0
+        self.cumulative_probs[-1] = 1.0
+
+    def _get_inverse_cdf(self) -> Callable:
+        return self._discrete_inverse_cdf
+
+    def _discrete_inverse_cdf(
+        self, u: Union[float, np.ndarray]
+    ) -> Union[float, np.ndarray]:
+        """
+        Discrete inverse CDF using Algorithm 2.3.
+        Find the smallest k such that F(x_k) >= U.
+        """
+        u = np.asarray(u)
+        is_scalar = u.ndim == 0
+        u = np.atleast_1d(u)
+
+        # For each u, find the first cumulative probability >= u
+        # This is equivalent to finding the smallest k such that F(x_k) >= u
+        indices = np.searchsorted(self.cumulative_probs, u, side="right")
+
+        # Clamp indices to valid range
+        indices = np.clip(indices, 0, len(self.values) - 1)
+
+        results = self.values[indices]
+
+        return results.item() if is_scalar else results
+
+
 class StratifiedInverseTransformSampler(BaseInverseTransformSampler):
     """
     Stratified inverse transform sampler for variance reduction.
@@ -353,6 +426,8 @@ def create_sampler(
     inverse_cdf: Optional[Callable] = None,
     cdf: Optional[Callable] = None,
     x_range: Optional[Tuple[float, float]] = None,
+    values: Optional[np.ndarray] = None,
+    probabilities: Optional[np.ndarray] = None,
     method: str = "analytical",
     **kwargs,
 ) -> BaseInverseTransformSampler:
@@ -367,8 +442,12 @@ def create_sampler(
         CDF function (for numerical methods).
     x_range : tuple, optional
         Range for numerical methods.
+    values : np.ndarray, optional
+        Discrete values for discrete method.
+    probabilities : np.ndarray, optional
+        Probabilities for discrete method.
     method : str
-        'analytical', 'numerical', 'adaptive'.
+        'analytical', 'numerical', 'adaptive', 'discrete', 'stratified'.
     **kwargs : additional arguments passed to sampler constructor.
 
     Returns:
@@ -390,6 +469,13 @@ def create_sampler(
         if cdf is None or x_range is None:
             raise ValueError("cdf and x_range must be provided for adaptive method")
         return AdaptiveInverseTransformSampler(cdf, x_range, **kwargs)
+
+    elif method == "discrete":
+        if values is None or probabilities is None:
+            raise ValueError(
+                "values and probabilities must be provided for discrete method"
+            )
+        return DiscreteInverseTransformSampler(values, probabilities, **kwargs)
 
     elif method == "stratified":
         if inverse_cdf is None:

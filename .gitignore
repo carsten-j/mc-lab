@@ -11,3 +11,11 @@ dist/
 build/
 *.egg-info/
 *.egg-info
+
+*.aux
+*.log
+*.toc
+*.synctex.gz
+*.fdb_latexmk
+*.fls
+notes/**/*.pdf
