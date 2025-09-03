@@ -76,6 +76,10 @@ Install from PyPI:
 pip install mc-lab-edu
 ```
 
+### Google Colab Compatibility
+
+Version 0.2.1+ has been specifically tested to work with Google Colab's package environment. The numpy version is constrained to `>=1.26.0,<2.1.0` to avoid conflicts with pre-installed packages like opencv, tensorflow, cupy, and numba.
+
 Or for local development:
 
 ## Clone the repository
