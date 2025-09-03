@@ -1,6 +1,6 @@
 [project]
 name = "mc-lab-edu"
-version = "0.2.2"
+version = "0.2.3"
 description = "Educational implementations of core Monte Carlo method algorithms"
 readme = "README.md"
 requires-python = ">=3.12"
@@ -22,9 +22,9 @@ classifiers = [
 dependencies = [
     "arviz>=0.22.0",
     "iprogress>=0.4",
-    "matplotlib>=3.10.6",
-    "numpy>=1.24.0,<2.0.0",
-    "scipy>=1.11.0",
+    "matplotlib==3.10.0",
+    "numpy==2.0.2",
+    "scipy==1.16.1",
     "tqdm>=4.66.0",
     "watermark>=2.5.0",
 ]
