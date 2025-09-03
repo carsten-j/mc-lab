@@ -78,7 +78,7 @@ pip install mc-lab-edu
 
 ### Google Colab Compatibility
 
-Version 0.2.1+ has been specifically tested to work with Google Colab's package environment. The numpy version is constrained to `>=1.26.0,<2.1.0` to avoid conflicts with pre-installed packages like opencv, tensorflow, cupy, and numba.
+Version 0.2.2+ has been specifically tested to work with Google Colab's package environment. The numpy version is constrained to `>=1.24.0,<2.0.0` to avoid compatibility issues with pre-installed packages and scipy. This resolves the `_center` import errors that occurred with numpy 2.x versions.
 
 Or for local development:
 
