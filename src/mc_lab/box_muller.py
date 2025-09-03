@@ -25,16 +25,17 @@ import numpy as np
 
 from ._rng import RandomState, RNGLike, as_generator
 
-# Optional Numba acceleration for the polar method
-try:  # pragma: no cover - availability depends on environment
-    import numba as _numba  # type: ignore
+# # Optional Numba acceleration for the polar method
+# try:  # pragma: no cover - availability depends on environment
+#     import numba as _numba  # type: ignore
 
-    _HAVE_NUMBA = True
-except Exception:  # pragma: no cover
-    _numba = None
-    _HAVE_NUMBA = False
+#     _HAVE_NUMBA = True
+# except Exception:  # pragma: no cover
+#     _numba = None
+#     _HAVE_NUMBA = False
 
-Method = Literal["classic", "polar", "polar_njit"]
+# Method = Literal["classic", "polar", "polar_njit"]
+Method = Literal["classic", "polar"]
 
 __all__ = ["box_muller"]
 
@@ -82,8 +83,8 @@ def box_muller(
         samples = _box_muller_classic(n, rng, return_pairs=return_pairs)
     elif method == "polar":
         samples = _box_muller_polar(n, rng, return_pairs=return_pairs)
-    elif method == "polar_njit":
-        samples = _box_muller_polar_njit(n, rng, return_pairs=return_pairs)
+    # elif method == "polar_njit":
+    #     samples = _box_muller_polar_njit(n, rng, return_pairs=return_pairs)
     else:
         raise ValueError("method must be 'classic' or 'polar'")
 
@@ -188,68 +189,68 @@ def _box_muller_polar(
     return _assemble_output(z0, z1, n=n, return_pairs=return_pairs)
 
 
-def _box_muller_polar_njit(
-    n: int,
-    rng: RNGLike,
-    *,
-    return_pairs: bool = False,
-) -> np.ndarray:
-    """Numba-accelerated Marsaglia polar method.
+# def _box_muller_polar_njit(
+#     n: int,
+#     rng: RNGLike,
+#     *,
+#     return_pairs: bool = False,
+# ) -> np.ndarray:
+#     """Numba-accelerated Marsaglia polar method.
 
-    Uses a compiled scalar rejection loop with its own RNG seeded from the
-    provided random_state for reproducibility across runs.
-    """
-    if not _HAVE_NUMBA:
-        raise ImportError(
-            "Numba is required for method='polar_njit'. Please install 'numba' or use method='polar'."
-        )
+#     Uses a compiled scalar rejection loop with its own RNG seeded from the
+#     provided random_state for reproducibility across runs.
+#     """
+#     if not _HAVE_NUMBA:
+#         raise ImportError(
+#             "Numba is required for method='polar_njit'. Please install 'numba' or use method='polar'."
+#         )
 
-    target_pairs = (n + 1) // 2
+#     target_pairs = (n + 1) // 2
 
-    # Derive an integer seed from rng so results are reproducible given the input state
-    # We avoid consuming many values from rng; just one 32-bit value for seeding.
-    try:
-        seed = int(
-            np.uint64(
-                np.random.SeedSequence(
-                    rng.integers(0, 2**32 - 1, dtype=np.uint32)
-                ).entropy
-            )
-        )
-    except Exception:
-        # Fallback if rng is not a numpy Generator-like object with integers
-        seed = int(np.random.SeedSequence().entropy)
+#     # Derive an integer seed from rng so results are reproducible given the input state
+#     # We avoid consuming many values from rng; just one 32-bit value for seeding.
+#     try:
+#         seed = int(
+#             np.uint64(
+#                 np.random.SeedSequence(
+#                     rng.integers(0, 2**32 - 1, dtype=np.uint32)
+#                 ).entropy
+#             )
+#         )
+#     except Exception:
+#         # Fallback if rng is not a numpy Generator-like object with integers
+#         seed = int(np.random.SeedSequence().entropy)
 
-    z0, z1 = _polar_pairs_numba(target_pairs, seed)
-    return _assemble_output(z0, z1, n=n, return_pairs=return_pairs)
+#     z0, z1 = _polar_pairs_numba(target_pairs, seed)
+#     return _assemble_output(z0, z1, n=n, return_pairs=return_pairs)
 
 
-if _HAVE_NUMBA:  # pragma: no cover
+# if _HAVE_NUMBA:  # pragma: no cover
 
-    @_numba.njit(cache=True, fastmath=True)
-    def _polar_pairs_numba(m: int, seed: int):  # type: ignore[no-redef]
-        # Local RNG seeded for reproducibility
-        if seed >= 0:
-            np.random.seed(np.uint64(seed))
+#     @_numba.njit(cache=True, fastmath=True)
+#     def _polar_pairs_numba(m: int, seed: int):  # type: ignore[no-redef]
+#         # Local RNG seeded for reproducibility
+#         if seed >= 0:
+#             np.random.seed(np.uint64(seed))
 
-        out0 = np.empty(m, np.float64)
-        out1 = np.empty(m, np.float64)
-        i = 0
-        # Scalar rejection loop; typically ~0.785 acceptance rate
-        while i < m:
-            u = 2.0 * np.random.random() - 1.0
-            v = 2.0 * np.random.random() - 1.0
-            s = u * u + v * v
-            if s > 0.0 and s < 1.0:
-                factor = np.sqrt(-2.0 * np.log(s) / s)
-                out0[i] = u * factor
-                out1[i] = v * factor
-                i += 1
-        return out0, out1
-else:  # pragma: no cover
+#         out0 = np.empty(m, np.float64)
+#         out1 = np.empty(m, np.float64)
+#         i = 0
+#         # Scalar rejection loop; typically ~0.785 acceptance rate
+#         while i < m:
+#             u = 2.0 * np.random.random() - 1.0
+#             v = 2.0 * np.random.random() - 1.0
+#             s = u * u + v * v
+#             if s > 0.0 and s < 1.0:
+#                 factor = np.sqrt(-2.0 * np.log(s) / s)
+#                 out0[i] = u * factor
+#                 out1[i] = v * factor
+#                 i += 1
+#         return out0, out1
+# else:  # pragma: no cover
 
-    def _polar_pairs_numba(m: int, seed: int):  # type: ignore[misc]
-        raise ImportError("numba is not available")
+#     def _polar_pairs_numba(m: int, seed: int):  # type: ignore[misc]
+#         raise ImportError("numba is not available")
 
 
 def _assemble_output(
