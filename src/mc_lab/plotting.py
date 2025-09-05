@@ -1,6 +1,7 @@
 # Reusable visualization function for all distribution examples
 import matplotlib.pyplot as plt
 import numpy as np
+from statsmodels.graphics.gofplots import qqplot
 
 
 def plot_distribution_analysis(
@@ -11,7 +12,6 @@ def plot_distribution_analysis(
     theoretical_mean,
     sample_mean,
     scipy_dist,
-    color="blue",
     x_range=None,
     n_points=1000,
 ):
@@ -34,8 +34,6 @@ def plot_distribution_analysis(
         Sample mean of the generated samples
     scipy_dist : scipy.stats distribution object
         Scipy distribution for comparison (with parameters set)
-    color : str, optional
-        Color for the plots (default: 'blue')
     x_range : tuple, optional
         (min, max) range for x-axis. If None, will be inferred from samples
     n_points : int, optional
@@ -65,7 +63,6 @@ def plot_distribution_analysis(
         bins=50,
         density=True,
         alpha=0.7,
-        color=color,
         label="Generated samples",
     )
     axes[0, 0].plot(
@@ -79,7 +76,6 @@ def plot_distribution_analysis(
     axes[0, 0].set_ylabel("Density")
     axes[0, 0].set_title("PDF Comparison")
     axes[0, 0].legend()
-    axes[0, 0].grid(True, alpha=0.3)
 
     # Plot 2: CDF Comparison
     theoretical_cdf = scipy_dist.cdf(x_theory)
@@ -91,7 +87,6 @@ def plot_distribution_analysis(
     axes[0, 1].plot(
         x_theory,
         empirical_cdf,
-        color=color,
         linestyle="--",
         linewidth=1,
         alpha=0.8,
@@ -101,49 +96,33 @@ def plot_distribution_analysis(
     axes[0, 1].set_ylabel("P(X ≤ x)")
     axes[0, 1].set_title("CDF Comparison")
     axes[0, 1].legend()
-    axes[0, 1].grid(True, alpha=0.3)
 
     # Plot 3: Q-Q Plot
-    quantiles = np.linspace(0.01, 0.99, 100)
-    theoretical_quantiles = scipy_dist.ppf(quantiles)
-    empirical_quantiles = np.quantile(samples, quantiles)
-
-    axes[1, 0].scatter(
-        theoretical_quantiles, empirical_quantiles, alpha=0.6, s=20, color=color
+    qqplot(
+        samples,
+        dist=scipy_dist,
+        ax=axes[1, 0],
+        alpha=0.6,
+        line="45",
+        markersize=4,
     )
-    min_val = np.min(theoretical_quantiles)
-    max_val = np.max(theoretical_quantiles)
-    axes[1, 0].plot(
-        [min_val, max_val],
-        [min_val, max_val],
-        "r--",
-        linewidth=2,
-        label="Perfect fit",
-    )
-    axes[1, 0].set_xlabel("Theoretical quantiles")
-    axes[1, 0].set_ylabel("Sample quantiles")
     axes[1, 0].set_title("Q-Q Plot")
-    axes[1, 0].legend()
-    axes[1, 0].grid(True, alpha=0.3)
 
     # Plot 4: Sample Realization
     sample_indices = np.arange(min(1000, len(samples)))
     axes[1, 1].plot(
         sample_indices,
         samples[: len(sample_indices)],
-        color=color,
         alpha=0.7,
         linewidth=0.8,
     )
     axes[1, 1].axhline(
         y=theoretical_mean,
-        color="r",
         linestyle="--",
         label=f"Theoretical mean: {theoretical_mean:.3f}",
     )
     axes[1, 1].axhline(
         y=sample_mean,
-        color="orange",
         linestyle="--",
         alpha=0.8,
         label=f"Sample mean: {sample_mean:.3f}",
@@ -152,7 +131,6 @@ def plot_distribution_analysis(
     axes[1, 1].set_ylabel("Sample value")
     axes[1, 1].set_title("Sample Realization")
     axes[1, 1].legend()
-    axes[1, 1].grid(True, alpha=0.3)
 
     plt.tight_layout()
     plt.show()

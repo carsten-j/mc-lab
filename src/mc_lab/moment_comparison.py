@@ -101,7 +101,8 @@ class MomentComparison:
                 if self.moment_exists.get(k, True):
                     try:
                         moments[f"raw_moment_{k}"] = float(self.dist.moment(k))
-                    except:
+                    except Exception as e:
+                        warnings.warn(f"Error calculating raw moment {k}: {e}")
                         moments[f"raw_moment_{k}"] = np.nan
                 else:
                     moments[f"raw_moment_{k}"] = np.nan
@@ -526,7 +527,7 @@ def compare_distribution_moments(
     robust: bool = False,
     bootstrap_ci: bool = True,
     n_bootstrap: int = 1000,
-    plot: bool = True,
+    plot: bool = False,
     create_report: bool = True,
 ) -> Dict[str, Any]:
     """

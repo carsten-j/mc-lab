@@ -26,23 +26,20 @@ def distribution_comparison(sample1, sample2, alpha=0.05, print_result=True):
 
     if print_result:
         print("Distribution Comparison Results:")
-        print("=" * 35)
-        print("Kolmogorov-Smirnov Test:")
-        print(f"  Statistic: {ks_stat:.6f}")
-        print(f"  P-value: {ks_p:.6f}")
-        print(f"  Significant at α={alpha}: {'Yes' if ks_p < alpha else 'No'}")
-        print()
-        print("Anderson-Darling Test:")
-        print(f"  Statistic: {ad_result.statistic:.6f}")
-        print(f"  P-value: {ad_result.pvalue:.6f}")
+        print("=" * 80)
         print(
-            f"  Significant at α={alpha}: {'Yes' if ad_result.pvalue < alpha else 'No'}"
+            f"{'Distribution Test':<25} {'Statistic':<12} {'P-value':<12} {'Significant at α={alpha}':<20}"
         )
-        print()
-        print("Cramér-von Mises Test:")
-        print(f"  Statistic: {res.statistic:.6f}")
-        print(f"  P-value: {res.pvalue:.6f}")
-        print(f"  Significant at α={alpha}: {'Yes' if res.pvalue < alpha else 'No'}")
-        print("=" * 35)
+        print("-" * 80)
+        print(
+            f"{'Kolmogorov-Smirnov':<25} {ks_stat:<12.6f} {ks_p:<12.6f} {'Yes' if ks_p < alpha else 'No':<20}"
+        )
+        print(
+            f"{'Anderson-Darling':<25} {ad_result.statistic:<12.6f} {ad_result.pvalue:<12.6f} {'Yes' if ad_result.pvalue < alpha else 'No':<20}"
+        )
+        print(
+            f"{'Cramér-von Mises':<25} {res.statistic:<12.6f} {res.pvalue:<12.6f} {'Yes' if res.pvalue < alpha else 'No':<20}"
+        )
+        print("=" * 80)
 
     return results

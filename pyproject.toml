@@ -27,6 +27,8 @@ dependencies = [
     "scipy==1.16.1",
     "tqdm==4.67.1",
     "watermark==2.5.0",
+    "statsmodels==0.14.5",
+    "seaborn==0.13.2",
 ]
 
 [build-system]
