@@ -1,6 +1,6 @@
 [project]
 name = "mc-lab-edu"
-version = "0.2.5"
+version = "0.2.6"
 description = "Educational implementations of core Monte Carlo method algorithms"
 readme = "README.md"
 requires-python = ">=3.12"
@@ -29,6 +29,7 @@ dependencies = [
     "watermark==2.5.0",
     "statsmodels==0.14.5",
     "seaborn==0.13.2",
+    "pandas==2.2.2"
 ]
 
 [build-system]

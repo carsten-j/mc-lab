@@ -6,12 +6,8 @@ from statsmodels.graphics.gofplots import qqplot
 
 def plot_distribution_analysis(
     samples,
-    distribution_name,
-    example_number,
-    method_description,
-    theoretical_mean,
-    sample_mean,
     scipy_dist,
+    title,
     x_range=None,
     n_points=1000,
 ):
@@ -28,10 +24,6 @@ def plot_distribution_analysis(
         Example identifier (e.g., "2.1", "3.2")
     method_description : str
         Description of the sampling method used
-    theoretical_mean : float
-        Theoretical mean of the distribution
-    sample_mean : float
-        Sample mean of the generated samples
     scipy_dist : scipy.stats distribution object
         Scipy distribution for comparison (with parameters set)
     x_range : tuple, optional
@@ -41,7 +33,7 @@ def plot_distribution_analysis(
     """
     fig, axes = plt.subplots(2, 2, figsize=(15, 12))
     fig.suptitle(
-        f"Example {example_number}: {distribution_name} Distribution via {method_description}",
+        title,
         fontsize=16,
     )
 
@@ -116,11 +108,13 @@ def plot_distribution_analysis(
         alpha=0.7,
         linewidth=0.8,
     )
+    theoretical_mean = scipy_dist.mean()
     axes[1, 1].axhline(
         y=theoretical_mean,
         linestyle="--",
         label=f"Theoretical mean: {theoretical_mean:.3f}",
     )
+    sample_mean = np.mean(samples)
     axes[1, 1].axhline(
         y=sample_mean,
         linestyle="--",
