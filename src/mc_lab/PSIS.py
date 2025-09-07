@@ -6,18 +6,33 @@ def pareto_smooth_is(weights, tail_fraction=0.2):
     """
     Pareto Smoothed Importance Sampling (PSIS).
 
-    Given an array of importance weights, returns smoothed weights and the Pareto shape parameter k.
-    The largest weights are smoothed by fitting a generalized Pareto distribution (GPD) to the upper tail
-    of the weight distribution and replacing those extreme weights with expected order statistics from the GPD ([arxiv.org](https://arxiv.org/html/1507.02646v9#:~:text=We%20propose%20a%20new%20method,tails%20of%20the%20importance%20distribution)).
+    Given an array of importance weights, returns smoothed weights and
+    the Pareto shape parameter k. The largest weights are smoothed by
+    fitting a generalized Pareto distribution (GPD) to the upper tail
+    of the weight distribution and replacing those extreme weights with
+    expected order statistics from the GPD. This algorithm is inspired by
+    Pareto Smoothed Importance Sampling, by Aki Vehtari, Daniel Simpson,
+    Andrew Gelman, Yuling Yao, Jonah Gabry, see https://arxiv.org/abs/1507.02646
+
+    The implementation deviated from the article by using a Generalized
+    Pareto Distribution (GPD) from Scipy instead of the one mentioned in
+    the article: A New Parameter Estimator for the Generalized Pareto
+    Distribution under the Peaks over Threshold Framework by Xu Zhao,
+    Zhongxian Zhang, Weihu Cheng, and Pengyue Zhang, see
+    https://www.mdpi.com/2227-7390/7/5/406
 
     Parameters:
-        weights (array_like): 1D array of raw importance weights (positive values).
-        tail_fraction (float): Fraction of samples to consider as the "upper tail".
-                                For example, 0.2 means the top 20% of weights will be modeled by GPD.
+        weights (array_like):   1D array of raw importance weights
+                                (positive values).
+        tail_fraction (float):  Fraction of samples to consider as the
+                                "upper tail". For example, 0.2 means the
+                                top 20% of weights will be modeled by GPD.
 
     Returns:
-        smoothed_weights (ndarray): Array of the same shape as input, with largest weights replaced by smoothed values.
-        k_hat (float): Estimated shape parameter of the fitted Pareto distribution (diagnostic).
+        smoothed_weights (ndarray): Array of the same shape as input, with largest
+            weights replaced by smoothed values.
+        k_hat (float): Estimated shape parameter of the fitted
+            Pareto distribution (diagnostic).
     """
     weights = np.asarray(weights, dtype=float)
     N = weights.size

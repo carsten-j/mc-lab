@@ -32,6 +32,13 @@ def importance_sampling(
     seed : int, optional
         Random seed for reproducibility.
 
+    For a discussion of diagnostics (especially ESS) see Art Owens book,
+    chapter 9 about Importance Sampling. There is also a great blog post
+    by Sebastian Nowozin about ESS, see
+    https://www.nowozin.net/sebastian/blog/effective-sample-size-in-importance-sampling.html
+
+    ToDo: Implement Art Owen metrics that include the integrand f and average of weights.
+
     Returns
     -------
     estimate : float
@@ -41,13 +48,9 @@ def importance_sampling(
         - 'weights': Normalized importance weights
         - 'log_weights': Log importance weights (unnormalized)
         - 'effective_sample_size': ESS estimate
-        - 'cv_weights': Coefficient of variation of weights
-        - 'max_weight': Maximum normalized weight
         - 'samples': Samples drawn from proposal
         - 'function_values': f(x) evaluated at samples
         - 'variance': Estimated variance of the estimator
-        - 'standard_error': Standard error of the estimate
-        - 'weight_entropy': Entropy of normalized weights
         - 'proposal_efficiency': ESS / n_samples
 
     Examples
@@ -150,16 +153,6 @@ def importance_sampling(
     diagnostics["effective_sample_size"] = ess
     diagnostics["proposal_efficiency"] = ess / n_samples
 
-    # Coefficient of variation of weights
-    if np.mean(weights_for_diagnostics) > 0:
-        cv_weights = np.std(weights_for_diagnostics) / np.mean(weights_for_diagnostics)
-    else:
-        cv_weights = np.inf
-    diagnostics["cv_weights"] = cv_weights
-
-    # Maximum weight (indicates potential problems if too large)
-    diagnostics["max_weight"] = np.max(weights_for_diagnostics)
-
     # Variance estimation
     if normalized:
         # For standard IS with normalized target
@@ -172,30 +165,12 @@ def importance_sampling(
         var_estimate = var_f / ess
 
     diagnostics["variance"] = var_estimate
-    diagnostics["standard_error"] = np.sqrt(var_estimate)
-
-    # Weight entropy (higher is better, max is log(n))
-    # Avoid log(0) by adding small epsilon
-    epsilon = 1e-10
-    weight_entropy = -np.sum(
-        weights_for_diagnostics * np.log(weights_for_diagnostics + epsilon)
-    )
-    diagnostics["weight_entropy"] = weight_entropy
-    diagnostics["relative_entropy"] = weight_entropy / np.log(
-        len(weights_for_diagnostics)
-    )
 
     # Add warnings for poor performance
     if ess < 0.1 * n_samples:
         warnings.warn(
             f"Low ESS: {ess:.0f} ({100 * ess / n_samples:.1f}% efficiency). "
             "Consider using a better proposal distribution."
-        )
-
-    if diagnostics["max_weight"] > 0.1:
-        warnings.warn(
-            f"Maximum weight is {diagnostics['max_weight']:.3f}. "
-            "Weight distribution is highly skewed."
         )
 
     return estimate, diagnostics
