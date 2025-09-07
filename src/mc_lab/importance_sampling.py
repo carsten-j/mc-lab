@@ -1,310 +1,349 @@
 import warnings
-from abc import ABC, abstractmethod
+from typing import Callable, Dict, Optional, Tuple, Union
 
-import matplotlib.pyplot as plt
 import numpy as np
 from scipy import stats
 
 
-class Distribution(ABC):
-    """Abstract base class for probability distributions"""
+def importance_sampling(
+    f: Callable[[np.ndarray], np.ndarray],
+    target: stats.rv_continuous,
+    proposal: stats.rv_continuous,
+    n_samples: int = 10000,
+    normalized: bool = True,
+    seed: Optional[int] = None,
+) -> Tuple[float, Dict[str, Union[float, np.ndarray]]]:
+    """
+    Importance sampling algorithm to compute E_p[f(x)] = ∫ f(x)p(x)dx.
 
-    @abstractmethod
-    def sample(self, n_samples):
-        """Generate n_samples from the distribution"""
-        pass
+    Parameters
+    ----------
+    f : Callable
+        Function to integrate. Should accept array input and return array output.
+    target : scipy.stats.rv_continuous
+        Target distribution p(x). Can be normalized or unnormalized.
+    proposal : scipy.stats.rv_continuous
+        Proposal distribution q(x) for sampling.
+    n_samples : int, default=10000
+        Number of samples to draw from proposal distribution.
+    normalized : bool, default=True
+        Whether the target distribution p is normalized (integrates to 1).
+        If False, self-normalized importance sampling is used.
+    seed : int, optional
+        Random seed for reproducibility.
 
-    @abstractmethod
-    def log_pdf(self, x):
-        """Compute log probability density function"""
-        pass
+    Returns
+    -------
+    estimate : float
+        Estimated value of the integral E_p[f(x)].
+    diagnostics : dict
+        Dictionary containing diagnostic information:
+        - 'weights': Normalized importance weights
+        - 'log_weights': Log importance weights (unnormalized)
+        - 'effective_sample_size': ESS estimate
+        - 'cv_weights': Coefficient of variation of weights
+        - 'max_weight': Maximum normalized weight
+        - 'samples': Samples drawn from proposal
+        - 'function_values': f(x) evaluated at samples
+        - 'variance': Estimated variance of the estimator
+        - 'standard_error': Standard error of the estimate
+        - 'weight_entropy': Entropy of normalized weights
+        - 'proposal_efficiency': ESS / n_samples
 
-    def pdf(self, x):
-        """Compute probability density function"""
-        return np.exp(self.log_pdf(x))
+    Examples
+    --------
+    >>> # Example 1: Computing expectation of x^2 under normal distribution
+    >>> target = stats.norm(loc=2, scale=1)
+    >>> proposal = stats.norm(loc=0, scale=2)
+    >>> f = lambda x: x**2
+    >>> estimate, diagnostics = importance_sampling(f, target, proposal, n_samples=5000)
+    >>> print(f"Estimate: {estimate:.4f}")
+    >>> print(f"ESS: {diagnostics['effective_sample_size']:.0f}")
 
+    >>> # Example 2: Unnormalized target distribution
+    >>> class UnnormalizedGaussian(stats.rv_continuous):
+    ...     def __init__(self, mu, sigma):
+    ...         super().__init__()
+    ...         self.mu = mu
+    ...         self.sigma = sigma
+    ...     def _pdf(self, x):
+    ...         return np.exp(-0.5 * ((x - self.mu) / self.sigma)**2)
+    >>>
+    >>> unnorm_target = UnnormalizedGaussian(mu=1, sigma=0.5)
+    >>> proposal = stats.norm(loc=1, scale=1)
+    >>> f = lambda x: x
+    >>> estimate, diag = importance_sampling(f, unnorm_target, proposal,
+    ...                                      n_samples=10000, normalized=False)
+    """
 
-class Normal(Distribution):
-    """Normal distribution implementation"""
+    # Set random seed if provided
+    if seed is not None:
+        np.random.seed(seed)
 
-    def __init__(self, mean=0, std=1):
-        self.mean = mean
-        self.std = std
+    # Draw samples from proposal distribution
+    samples = proposal.rvs(size=n_samples)
 
-    def sample(self, n_samples):
-        return np.random.normal(self.mean, self.std, n_samples)
+    # Compute log densities for numerical stability
+    log_p = target.logpdf(samples)
+    log_q = proposal.logpdf(samples)
 
-    def log_pdf(self, x):
-        return stats.norm.logpdf(x, self.mean, self.std)
-
-
-class MixtureNormal(Distribution):
-    """Mixture of two normal distributions"""
-
-    def __init__(self, mean1, std1, mean2, std2, weight1=0.5):
-        self.mean1, self.std1 = mean1, std1
-        self.mean2, self.std2 = mean2, std2
-        self.weight1 = weight1
-        self.weight2 = 1 - weight1
-
-    def sample(self, n_samples):
-        # Sample from mixture
-        n1 = np.random.binomial(n_samples, self.weight1)
-        n2 = n_samples - n1
-
-        samples1 = np.random.normal(self.mean1, self.std1, n1)
-        samples2 = np.random.normal(self.mean2, self.std2, n2)
-
-        samples = np.concatenate([samples1, samples2])
-        np.random.shuffle(samples)
-        return samples
-
-    def log_pdf(self, x):
-        pdf1 = stats.norm.pdf(x, self.mean1, self.std1)
-        pdf2 = stats.norm.pdf(x, self.mean2, self.std2)
-        mixture_pdf = self.weight1 * pdf1 + self.weight2 * pdf2
-        return np.log(mixture_pdf + 1e-100)  # Add small constant to avoid log(0)
-
-
-class NonStandardDistribution(Distribution):
-    """Non-standard unnormalized distribution: exp(-x²/4) * (1 + sin²(2x))"""
-
-    def __init__(self):
-        # This distribution is unnormalized and difficult to sample from directly
-        pass
-
-    def sample(self, n_samples):
-        # For this example, we don't implement direct sampling
-        # In practice, you might use rejection sampling or MCMC
-        raise NotImplementedError(
-            "Direct sampling not implemented for this distribution"
+    # Check for invalid values
+    if np.any(np.isnan(log_p)) or np.any(np.isnan(log_q)):
+        warnings.warn(
+            "NaN values detected in log densities. Check distribution support."
         )
 
-    def log_pdf(self, x):
-        """Unnormalized log PDF"""
-        return -(x**2) / 4 + np.log(1 + np.sin(2 * x) ** 2)
-
-    def pdf(self, x):
-        """Unnormalized PDF"""
-        return np.exp(-(x**2) / 4) * (1 + np.sin(2 * x) ** 2)
-
-
-class ImportanceSampler:
-    """General importance sampling implementation"""
-
-    def __init__(self, target_dist, proposal_dist, function, use_self_normalized=False):
-        self.target_dist = target_dist
-        self.proposal_dist = proposal_dist
-        self.function = function
-        self.use_self_normalized = use_self_normalized
-
-    def estimate(self, n_samples, return_diagnostics=False, return_samples=False):
-        """Perform importance sampling estimation"""
-        samples = self.proposal_dist.sample(n_samples)
-        weights = self.compute_weights(samples)
-        function_values = self.function(samples)
-
-        # Handle potential numerical issues
-        if np.any(np.isinf(weights)) or np.any(np.isnan(weights)):
-            warnings.warn(
-                "Infinite or NaN weights detected. Results may be unreliable."
-            )
-
-        if self.use_self_normalized:
-            # Self-normalized importance sampling (for expectations under unnormalized distributions)
-            weights_sum = np.sum(weights)
-            if weights_sum == 0:
-                raise ValueError(
-                    "Sum of weights is zero. Proposal distribution may be inappropriate."
-                )
-            estimate = np.sum(weights * function_values) / weights_sum
-        else:
-            # Regular importance sampling (for normalizing constants, expectations under normalized distributions)
-            estimate = np.mean(weights * function_values)
-
-        results = {"estimate": estimate}
-
-        if return_diagnostics:
-            results["diagnostics"] = self.compute_diagnostics(weights)
-
-        if return_samples:
-            results["samples"] = samples
-            results["weights"] = weights
-            results["function_values"] = function_values
-
-        return results
-
-    def compute_weights(self, samples):
-        """Compute importance weights w_i = p(x_i) / q(x_i)"""
-        log_target = self.target_dist.log_pdf(samples)
-        log_proposal = self.proposal_dist.log_pdf(samples)
-        log_weights = log_target - log_proposal
-
-        # Clip extreme log weights for numerical stability
-        log_weights = np.clip(log_weights, -50, 50)
-
-        return np.exp(log_weights)
-
-    def compute_diagnostics(self, weights):
-        """Compute diagnostic statistics for importance sampling"""
-        weights = np.array(weights)
-        weights_sum = np.sum(weights)
-        weights_sq_sum = np.sum(weights**2)
-
-        if weights_sum == 0:
-            return {"effective_sample_size": 0, "warning": "All weights are zero"}
-
-        # Effective sample size
-        ess = weights_sum**2 / weights_sq_sum if weights_sq_sum > 0 else 0
-
-        # Coefficient of variation of weights
-        cv_weights = (
-            np.std(weights) / np.mean(weights) if np.mean(weights) > 0 else np.inf
+    if np.any(np.isinf(log_q)):
+        warnings.warn(
+            "Infinite values in proposal log density. Some samples may be outside support."
         )
 
-        return {
-            "effective_sample_size": ess,
-            "relative_ess": ess / len(weights),
-            "cv_weights": cv_weights,
-            "max_weight": np.max(weights),
-            "min_weight": np.min(weights),
-            "n_zero_weights": np.sum(weights == 0),
-            "n_negligible_weights": np.sum(weights < 1e-10),
-            "weight_concentration": np.sum(
-                weights > np.mean(weights) + 2 * np.std(weights)
-            ),
-        }
+    # Compute log importance weights
+    log_weights = log_p - log_q
 
+    # Handle -inf values (samples outside target support)
+    valid_idx = np.isfinite(log_weights)
+    if not np.all(valid_idx):
+        warnings.warn(
+            f"{np.sum(~valid_idx)} samples have invalid weights (outside support)."
+        )
+        log_weights = log_weights[valid_idx]
+        samples_valid = samples[valid_idx]
+    else:
+        samples_valid = samples
 
-def create_visualization(target_dist, proposal_dist, sampler_results, x_range=(-6, 6)):
-    """Create comprehensive visualization of importance sampling results"""
+    # For numerical stability, subtract max log weight before exponentiating
+    max_log_weight = np.max(log_weights)
+    weights = np.exp(log_weights - max_log_weight)
 
-    fig, axes = plt.subplots(2, 3, figsize=(18, 12))
-    fig.suptitle(
-        "Importance Sampling Analysis: Non-standard PDF Integration", fontsize=16
+    # Normalize weights
+    if normalized:
+        # Standard importance sampling (target is normalized)
+        weights_normalized = weights * np.exp(max_log_weight)
+        # Ensure normalization for diagnostics
+        weights_for_diagnostics = weights_normalized / np.sum(weights_normalized)
+    else:
+        # Self-normalized importance sampling (target is unnormalized)
+        weights_normalized = weights / np.sum(weights)
+        weights_for_diagnostics = weights_normalized
+
+    # Evaluate function at samples
+    f_values = f(samples_valid)
+
+    # Compute estimate
+    if normalized:
+        estimate = np.mean(f_values * weights_normalized)
+    else:
+        estimate = np.sum(f_values * weights_normalized)
+
+    # Compute diagnostics
+    diagnostics = {}
+
+    # Store basic quantities
+    diagnostics["weights"] = weights_for_diagnostics
+    diagnostics["log_weights"] = log_weights
+    diagnostics["samples"] = samples_valid
+    diagnostics["function_values"] = f_values
+
+    # Effective Sample Size (ESS)
+    ess = 1.0 / np.sum(weights_for_diagnostics**2)
+    diagnostics["effective_sample_size"] = ess
+    diagnostics["proposal_efficiency"] = ess / n_samples
+
+    # Coefficient of variation of weights
+    if np.mean(weights_for_diagnostics) > 0:
+        cv_weights = np.std(weights_for_diagnostics) / np.mean(weights_for_diagnostics)
+    else:
+        cv_weights = np.inf
+    diagnostics["cv_weights"] = cv_weights
+
+    # Maximum weight (indicates potential problems if too large)
+    diagnostics["max_weight"] = np.max(weights_for_diagnostics)
+
+    # Variance estimation
+    if normalized:
+        # For standard IS with normalized target
+        var_estimate = np.var(f_values * weights_normalized) / len(samples_valid)
+    else:
+        # For self-normalized IS
+        # Using delta method approximation
+        sum_weights = np.sum(weights)
+        var_f = np.sum(weights * (f_values - estimate) ** 2) / sum_weights
+        var_estimate = var_f / ess
+
+    diagnostics["variance"] = var_estimate
+    diagnostics["standard_error"] = np.sqrt(var_estimate)
+
+    # Weight entropy (higher is better, max is log(n))
+    # Avoid log(0) by adding small epsilon
+    epsilon = 1e-10
+    weight_entropy = -np.sum(
+        weights_for_diagnostics * np.log(weights_for_diagnostics + epsilon)
+    )
+    diagnostics["weight_entropy"] = weight_entropy
+    diagnostics["relative_entropy"] = weight_entropy / np.log(
+        len(weights_for_diagnostics)
     )
 
-    x_plot = np.linspace(x_range[0], x_range[1], 1000)
+    # Add warnings for poor performance
+    if ess < 0.1 * n_samples:
+        warnings.warn(
+            f"Low ESS: {ess:.0f} ({100 * ess / n_samples:.1f}% efficiency). "
+            "Consider using a better proposal distribution."
+        )
 
-    # Plot 1: Target and proposal distributions
+    if diagnostics["max_weight"] > 0.1:
+        warnings.warn(
+            f"Maximum weight is {diagnostics['max_weight']:.3f}. "
+            "Weight distribution is highly skewed."
+        )
+
+    return estimate, diagnostics
+
+
+def diagnostic_plots(diagnostics: Dict, title: str = "Importance Sampling Diagnostics"):
+    """
+    Create diagnostic plots for importance sampling results.
+
+    Parameters
+    ----------
+    diagnostics : dict
+        Diagnostics dictionary from importance_sampling function.
+    title : str
+        Title for the plot.
+    """
+    import matplotlib.pyplot as plt
+
+    fig, axes = plt.subplots(2, 2, figsize=(12, 8))
+    fig.suptitle(title, fontsize=14, fontweight="bold")
+
+    # Plot 1: Weight distribution
     ax = axes[0, 0]
-    target_pdf = target_dist.pdf(x_plot)
-    proposal_pdf = proposal_dist.pdf(x_plot)
-
-    ax.plot(x_plot, target_pdf, "b-", linewidth=2, label="Target (unnormalized)")
-    ax.plot(x_plot, proposal_pdf, "r--", linewidth=2, label="Proposal")
-    ax.set_xlabel("x")
-    ax.set_ylabel("Density")
-    ax.set_title("Target vs Proposal Distributions")
-    ax.legend()
-    ax.grid(True, alpha=0.3)
-
-    # Plot 2: Samples and weights
-    ax = axes[0, 1]
-    samples = sampler_results["samples"]
-    weights = sampler_results["weights"]
-
-    # Color samples by weight magnitude
-    scatter = ax.scatter(
-        samples, np.zeros_like(samples), c=weights, s=30, alpha=0.6, cmap="viridis"
-    )
-    ax.set_xlabel("Sample values")
-    ax.set_title("Samples colored by importance weights")
-    ax.set_ylim(-0.1, 0.1)
-    plt.colorbar(scatter, ax=ax, label="Weight")
-    ax.grid(True, alpha=0.3)
-
-    # Plot 3: Weight distribution
-    ax = axes[0, 2]
-    ax.hist(weights, bins=50, alpha=0.7, density=True, color="purple")
+    weights = diagnostics["weights"]
+    ax.hist(weights, bins=50, alpha=0.7, edgecolor="black")
     ax.axvline(
-        np.mean(weights),
+        1 / len(weights),
         color="red",
         linestyle="--",
-        linewidth=2,
-        label=f"Mean: {np.mean(weights):.3f}",
+        label=f"Uniform weight (1/{len(weights):.0f})",
     )
-    ax.set_xlabel("Weight value")
-    ax.set_ylabel("Density")
-    ax.set_title("Distribution of Importance Weights")
+    ax.set_xlabel("Normalized Weight")
+    ax.set_ylabel("Frequency")
+    ax.set_title("Weight Distribution")
     ax.legend()
+    ax.set_yscale("log")
+
+    # Plot 2: Cumulative weight distribution
+    ax = axes[0, 1]
+    sorted_weights = np.sort(weights)[::-1]
+    cumsum_weights = np.cumsum(sorted_weights)
+    ax.plot(range(1, len(weights) + 1), cumsum_weights)
+    ax.axhline(0.5, color="red", linestyle="--", alpha=0.5)
+    ax.axhline(0.9, color="orange", linestyle="--", alpha=0.5)
+    ax.set_xlabel("Number of Samples")
+    ax.set_ylabel("Cumulative Weight")
+    ax.set_title("Cumulative Weight Distribution")
+    ax.set_xscale("log")
     ax.grid(True, alpha=0.3)
 
-    # Plot 4: Cumulative estimate convergence
+    # Plot 3: Log weights over iterations
     ax = axes[1, 0]
-    function_values = sampler_results["function_values"]
-    cumulative_estimate = np.cumsum(weights * function_values) / np.cumsum(weights)
-
-    ax.plot(cumulative_estimate, "b-", linewidth=2)
+    log_weights = diagnostics["log_weights"]
+    ax.plot(log_weights, alpha=0.6)
     ax.axhline(
-        cumulative_estimate[-1],
+        np.mean(log_weights),
         color="red",
         linestyle="--",
-        label=f"Final estimate: {cumulative_estimate[-1]:.4f}",
+        label=f"Mean: {np.mean(log_weights):.2f}",
     )
-    ax.set_xlabel("Sample number")
-    ax.set_ylabel("Cumulative estimate")
-    ax.set_title("Convergence of Integral Estimate")
+    ax.set_xlabel("Sample Index")
+    ax.set_ylabel("Log Weight")
+    ax.set_title("Log Weights Over Samples")
     ax.legend()
     ax.grid(True, alpha=0.3)
 
-    # Plot 5: Effective sample size evolution
+    # Plot 4: Summary statistics
     ax = axes[1, 1]
-    n_samples = len(weights)
-    ess_evolution = []
-
-    for i in range(100, n_samples, max(1, n_samples // 50)):
-        w_partial = weights[:i]
-        ess_partial = np.sum(w_partial) ** 2 / np.sum(w_partial**2)
-        ess_evolution.append(ess_partial / i)  # Relative ESS
-
-    x_ess = range(100, n_samples, max(1, n_samples // 50))
-    ax.plot(x_ess, ess_evolution, "g-", linewidth=2)
-    ax.set_xlabel("Sample number")
-    ax.set_ylabel("Relative Effective Sample Size")
-    ax.set_title("Evolution of Sampling Efficiency")
-    ax.grid(True, alpha=0.3)
-
-    # Plot 6: Diagnostics summary
-    ax = axes[1, 2]
     ax.axis("off")
 
-    diagnostics = sampler_results["diagnostics"]
-    diag_text = f"""
-    Importance Sampling Diagnostics:
-    
-    • Final Estimate: {sampler_results["estimate"]:.6f}
-    • Total Samples: {len(samples):,}
-    • Effective Sample Size: {diagnostics["effective_sample_size"]:.1f}
-    • Relative ESS: {diagnostics["relative_ess"]:.3f}
-    • CV of Weights: {diagnostics["cv_weights"]:.3f}
-    • Max Weight: {diagnostics["max_weight"]:.3f}
-    • Min Weight: {diagnostics["min_weight"]:.6f}
-    • Zero Weights: {diagnostics["n_zero_weights"]}
-    • Negligible Weights: {diagnostics["n_negligible_weights"]}
-    
-    Efficiency Assessment:
-    • {
-        "Excellent"
-        if diagnostics["relative_ess"] > 0.5
-        else "Good"
-        if diagnostics["relative_ess"] > 0.1
-        else "Poor"
-        if diagnostics["relative_ess"] > 0.01
-        else "Very Poor"
-    }
+    summary_text = f"""
+    ESS: {diagnostics["effective_sample_size"]:.0f}
+    Efficiency: {diagnostics["proposal_efficiency"] * 100:.1f}%
+    CV of weights: {diagnostics["cv_weights"]:.3f}
+    Max weight: {diagnostics["max_weight"]:.4f}
+    Weight entropy: {diagnostics["weight_entropy"]:.3f}
+    Relative entropy: {diagnostics["relative_entropy"]:.3f}
+    Standard Error: {diagnostics["standard_error"]:.4e}
     """
 
     ax.text(
-        0.05,
-        0.95,
-        diag_text,
-        transform=ax.transAxes,
-        fontsize=12,
-        verticalalignment="top",
-        fontfamily="monospace",
-        bbox=dict(boxstyle="round", facecolor="lightgray", alpha=0.8),
+        0.1,
+        0.5,
+        summary_text,
+        fontsize=11,
+        family="monospace",
+        verticalalignment="center",
     )
+    ax.set_title("Summary Statistics")
 
     plt.tight_layout()
-    return fig
+    plt.show()
+
+
+# Example usage and testing
+if __name__ == "__main__":
+    # Example 1: Normal target, normal proposal
+    print("Example 1: Computing E[X^2] under Normal(2, 1)")
+    print("-" * 50)
+
+    target = stats.norm(loc=2, scale=1)
+    proposal = stats.norm(loc=1.5, scale=1.5)
+
+    def f(x):
+        return x**2
+
+    estimate, diag = importance_sampling(f, target, proposal, n_samples=10000, seed=42)
+
+    # True value: Var(X) + E[X]^2 = 1 + 4 = 5
+    true_value = 1 + 2**2
+    print(f"Estimate: {estimate:.4f}")
+    print(f"True value: {true_value}")
+    print(f"Error: {abs(estimate - true_value):.4f}")
+    print(f"ESS: {diag['effective_sample_size']:.0f}")
+    print(f"Efficiency: {diag['proposal_efficiency'] * 100:.1f}%")
+    print()
+
+    diagnostic_plots(diag)
+
+    # Example 2: Unnormalized target distribution
+    print("Example 2: Unnormalized Gaussian target")
+    print("-" * 50)
+
+    class UnnormalizedGaussian(stats.rv_continuous):
+        def __init__(self, mu, sigma):
+            super().__init__()
+            self.mu = mu
+            self.sigma = sigma
+
+        def _pdf(self, x):
+            # Returns unnormalized density (missing 1/sqrt(2π)σ factor)
+            return np.exp(-0.5 * ((x - self.mu) / self.sigma) ** 2)
+
+        def _logpdf(self, x):
+            return -0.5 * ((x - self.mu) / self.sigma) ** 2
+
+    unnorm_target = UnnormalizedGaussian(mu=3, sigma=0.5)
+    proposal = stats.norm(loc=3, scale=1)
+
+    def f(x):
+        return x  # Computing E[X]
+
+    estimate, diag = importance_sampling(
+        f, unnorm_target, proposal, n_samples=10000, normalized=False, seed=42
+    )
+
+    print(f"Estimate E[X]: {estimate:.4f}")
+    print("True value: 3.0")
+    print(f"Error: {abs(estimate - 3.0):.4f}")
+    print(f"ESS: {diag['effective_sample_size']:.0f}")
+    print(f"Max weight: {diag['max_weight']:.4f}")
