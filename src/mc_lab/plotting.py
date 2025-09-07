@@ -1,4 +1,6 @@
 # Reusable visualization function for all distribution examples
+from ast import Dict
+
 import matplotlib.pyplot as plt
 import numpy as np
 from statsmodels.graphics.gofplots import qqplot
@@ -125,6 +127,97 @@ def plot_distribution_analysis(
     axes[1, 1].set_ylabel("Sample value")
     axes[1, 1].set_title("Sample Realization")
     axes[1, 1].legend()
+
+    plt.tight_layout()
+    plt.show()
+
+
+def importance_sampling_diagnostic_plots(
+    diagnostics: Dict, title: str = "Importance Sampling Diagnostics"
+):
+    """
+    Create diagnostic plots for importance sampling results.
+
+    Parameters
+    ----------
+    diagnostics : dict
+        Diagnostics dictionary from importance_sampling function.
+    title : str
+        Title for the plot.
+    """
+    import matplotlib.pyplot as plt
+
+    fig, axes = plt.subplots(2, 2, figsize=(12, 8))
+    fig.suptitle(title, fontsize=14, fontweight="bold")
+
+    # Plot 1: Weight distribution
+    ax = axes[0, 0]
+    weights = diagnostics["weights"]
+    ax.hist(weights, bins=50, alpha=0.7, edgecolor="black")
+    ax.axvline(
+        1 / len(weights),
+        color="red",
+        linestyle="--",
+        label=f"Uniform weight (1/{len(weights):.0f})",
+    )
+    ax.set_xlabel("Normalized Weight")
+    ax.set_ylabel("Frequency")
+    ax.set_title("Weight Distribution")
+    ax.legend()
+    ax.set_yscale("log")
+
+    # Plot 2: Cumulative weight distribution
+    ax = axes[0, 1]
+    sorted_weights = np.sort(weights)[::-1]
+    cumsum_weights = np.cumsum(sorted_weights)
+    ax.plot(range(1, len(weights) + 1), cumsum_weights)
+    ax.axhline(0.5, color="red", linestyle="--", alpha=0.5)
+    ax.axhline(0.9, color="orange", linestyle="--", alpha=0.5)
+    ax.set_xlabel("Number of Samples")
+    ax.set_ylabel("Cumulative Weight")
+    ax.set_title("Cumulative Weight Distribution")
+    ax.set_xscale("log")
+    ax.grid(True, alpha=0.3)
+
+    # Plot 3: Log weights over iterations
+    ax = axes[1, 0]
+    log_weights = diagnostics["log_weights"]
+    ax.plot(log_weights, alpha=0.6)
+    ax.axhline(
+        np.mean(log_weights),
+        color="red",
+        linestyle="--",
+        label=f"Mean: {np.mean(log_weights):.2f}",
+    )
+    ax.set_xlabel("Sample Index")
+    ax.set_ylabel("Log Weight")
+    ax.set_title("Log Weights Over Samples")
+    ax.legend()
+    ax.grid(True, alpha=0.3)
+
+    # Plot 4: Summary statistics
+    ax = axes[1, 1]
+    ax.axis("off")
+
+    summary_text = f"""
+    ESS: {diagnostics["effective_sample_size"]:.0f}
+    Efficiency: {diagnostics["proposal_efficiency"] * 100:.1f}%
+    CV of weights: {diagnostics["cv_weights"]:.3f}
+    Max weight: {diagnostics["max_weight"]:.4f}
+    Weight entropy: {diagnostics["weight_entropy"]:.3f}
+    Relative entropy: {diagnostics["relative_entropy"]:.3f}
+    Standard Error: {diagnostics["standard_error"]:.4e}
+    """
+
+    ax.text(
+        0.1,
+        0.5,
+        summary_text,
+        fontsize=11,
+        family="monospace",
+        verticalalignment="center",
+    )
+    ax.set_title("Summary Statistics")
 
     plt.tight_layout()
     plt.show()
