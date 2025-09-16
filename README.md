@@ -2,14 +2,6 @@
 
 Educational implementations of core Monte Carlo method algorithms. The goal is learning, clarity, and correctness over raw speed or micro-optimizations. Expect straightforward NumPy/SciPy-based code with helpful tests and comprehensive demo notebooks.
 
-## Collaboration
-
-Open to collaboration and contributions. If you're interested:
-
-- Open an issue to discuss ideas or report bugs.
-- Submit small, focused PRs with tests when public behavior changes.
-- For larger changes, start with a brief design proposal in an issue.
-
 ## Publishing new versions to PyPI
 
 This package is published to PyPI as `mc-lab-edu`. To publish a new version:
