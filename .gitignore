@@ -5,6 +5,7 @@ __pycache__/
 ProblemSets/
 *.nc
 *.ipynb_checkpoints
+notes/
 
 # Python packaging
 dist/
