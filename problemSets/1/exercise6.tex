@@ -1,0 +1,135 @@
+\section*{Exercise 6}
+
+\subsection*{Question 1}
+
+Show that $\pi_X(x) = \pi(x)$
+
+The extended probability density is defined as:
+\[
+\pi_{X,U}(x, u) = \begin{cases} 
+Mq(x) & \text{for } x \in \mathcal{X}, u \in \left[0, \frac{w(x)}{M}\right] \\
+0 & \text{otherwise}
+\end{cases}
+\]
+
+To verify that the marginal density $\pi_X(x) = \pi(x)$, we integrate over $u$:
+
+\[
+\pi_X(x) = \int \pi_{X,U}(x, u) \, du
+\]
+
+Since $\pi_{X,U}(x, u) = Mq(x)$ only when $u \in [0, \dfrac{w(x)}{M}]$, we have:
+
+\begin{align*}
+\pi_X(x) &= \int_0^{w(x)/M} Mq(x) \, du 
+= Mq(x) \cdot \frac{w(x)}{M} 
+= q(x) \cdot w(x) 
+= q(x) \cdot \frac{\pi(x)}{q(x)} 
+= \pi(x)
+\end{align*}
+
+Therefore, $\pi_X(x) = \pi(x)$.
+
+\subsection*{Part 2: Normalized Importance Sampling Estimate}
+
+Using the identity:
+\[
+I = \int_0^1 \int_{\mathcal{X}} \phi(x) \pi_{X,U}(x, u) \, dx \, du
+\]
+
+Under $q_{X,U}(x, u) = q(x) \times \mathbb{I}_{[0,1]}(u)$, we have $X \sim q$, $U \sim \mathcal{U}[0,1]$ independently.
+
+The importance weight function is:
+\[
+w(x, u) = \frac{\pi_{X,U}(x, u)}{q_{X,U}(x, u)}
+\]
+
+For points where $\pi_{X,U}(x, u) > 0$ (i.e., when $u \in [0, w(x)/M]$):
+\[
+w(x, u) = \frac{Mq(x)}{q(x) \cdot 1} = M
+\]
+
+However, $w(x, u) = 0$ when $u > w(x)/M$.
+
+More precisely:
+\[
+w(x, u) = M \cdot \mathbb{I}[u \leq w(x)/M]
+\]
+
+The normalized importance sampling estimate with $n$ samples $(X_i, U_i) \sim q_{X,U}$ is:
+
+\[
+\hat{I}_n = \frac{\sum_{i=1}^n \phi(X_i) w(X_i, U_i)}{\sum_{i=1}^n w(X_i, U_i)} = \frac{\sum_{i=1}^n \phi(X_i) \cdot M \cdot \mathbb{I}[U_i \leq w(X_i)/M]}{\sum_{i=1}^n M \cdot \mathbb{I}[U_i \leq w(X_i)/M]}
+\]
+
+Simplifying (canceling $M$):
+\[
+\hat{I}_n = \frac{\sum_{i: U_i \leq w(X_i)/M} \phi(X_i)}{\sum_{i: U_i \leq w(X_i)/M} 1}
+\]
+
+This is exactly the rejection sampling estimate! We only include samples where $U_i \leq w(X_i)/M$, which is the acceptance condition in rejection sampling with proposal $q$ and bound $M$.
+
+\subsection*{Part 3: Show $\mathbb{V}_q(w(X)) \leq \mathbb{V}_{q_{X,U}}(w(X,U))$}
+
+First, let's compute the expectations and variances.
+
+\textbf{Under $q$:}
+\begin{itemize}
+\item $\mathbb{E}_q[w(X)] = \int_{\mathcal{X}} w(x)q(x)\,dx = \int_{\mathcal{X}} \pi(x)\,dx = 1$
+\item $\mathbb{V}_q(w(X)) = \mathbb{E}_q[w(X)^2] - 1$
+\end{itemize}
+
+\textbf{Under $q_{X,U}$:}
+\begin{itemize}
+\item $w(X,U) = M$ when $U \leq w(X)/M$, and $0$ otherwise
+\item $\mathbb{E}_{q_{X,U}}[w(X,U)] = \mathbb{E}_q[\mathbb{E}_U[w(X,U)|X]]$
+\end{itemize}
+
+Computing the conditional expectation:
+\begin{align*}
+\mathbb{E}_U[w(X,U)|X] &= M \cdot \mathbb{P}(U \leq w(X)/M) + 0 \cdot \mathbb{P}(U > w(X)/M) \\
+&= M \cdot \frac{w(X)}{M} \\
+&= w(X)
+\end{align*}
+
+Therefore:
+\[
+\mathbb{E}_{q_{X,U}}[w(X,U)] = \mathbb{E}_q[w(X)] = 1
+\]
+
+For the second moment:
+\begin{align*}
+\mathbb{E}_{q_{X,U}}[w(X,U)^2] &= \mathbb{E}_q[\mathbb{E}_U[w(X,U)^2|X]] \\
+&= \mathbb{E}_q[M^2 \cdot \mathbb{P}(U \leq w(X)/M)] \\
+&= \mathbb{E}_q\left[M^2 \cdot \frac{w(X)}{M}\right] \\
+&= M \cdot \mathbb{E}_q[w(X)] \\
+&= M
+\end{align*}
+
+Therefore:
+\[
+\mathbb{V}_{q_{X,U}}(w(X,U)) = \mathbb{E}_{q_{X,U}}[w(X,U)^2] - 1 = M - 1
+\]
+
+Since $w(x) = \pi(x)/q(x) \leq M$ for all $x$, we have $w(X)^2 \leq M w(X)$ almost surely. Thus:
+\[
+\mathbb{E}_q[w(X)^2]  \leq M \cdot \mathbb{E}_q[ w(X)] = M
+\]
+
+
+Thus:
+\[
+\mathbb{V}_q(w(X)) = \mathbb{E}_q[w(X)^2] - 1 \leq M - 1 = \mathbb{V}_{q_{X,U}}(w(X,U))
+\]
+
+This completes the proof.
+\\[2mm]
+\textbf{Interpretation:} This result shows that importance sampling with the
+original distribution $q$ has lower or equal variance compared to the
+extended space formulation, which is equivalent to rejection sampling.
+The key insight is that rejection sampling can be viewed as importance
+sampling in an extended space, but it generally has higher variance due
+to the binary accept/reject nature of the weights.
+\\[2mm]
+The equality holds only when $w(x) = M$ almost everywhere, which would mean $\pi$ 
+and $q$ are proportional - a trivial case where rejection sampling would accept every sample.

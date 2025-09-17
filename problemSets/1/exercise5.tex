@@ -1,0 +1,129 @@
+\section*{Exercise 5 Solution}
+
+\subsection*{Part 1: Expression of $q^*(x)$}
+
+The accepted samples follow a probability density $q^*(x)$. Using the rejection sampling framework, when we accept with probability $\min\{1, w(x)/c\}$, the density of accepted samples is:
+
+\begin{equation}
+q^*(x) = \frac{q(x) \cdot \min\{1, w(x)/c\}}{Z_c}
+\end{equation}
+
+where the normalization constant is:
+\begin{equation}
+Z_c = \int_{\mathcal{X}} \min\{1, w(x)/c\} \, q(x) \, dx
+\end{equation}
+
+This can be rewritten as:
+\begin{equation}
+q^*(x) = \frac{q(x) \cdot \min\{1, \pi(x)/(cq(x))\}}{Z_c} = \frac{\min\{q(x), \pi(x)/c\}}{Z_c}
+\end{equation}
+
+\subsection*{Part 2: Prove $\mathbb{E}_{q^*}[(w^*(X))^2] = Z_c \mathbb{E}_q(\max\{w(X), c\}w(X))$}
+
+First, let's find $w^*(x) = \pi(x)/q^*(x)$:
+\begin{align}
+w^*(x) &= \frac{\pi(x)}{q^*(x)} = \frac{\pi(x) \cdot Z_c}{q(x) \cdot \min\{1, w(x)/c\}} \\
+&= \frac{w(x) \cdot Z_c}{\min\{1, w(x)/c\}}
+\end{align}
+
+Since $\min\{1, w(x)/c\} = \min\{c, w(x)\}/c$, we have:
+\begin{equation}
+w^*(x) = \frac{w(x) \cdot c \cdot Z_c}{\min\{c, w(x)\}} = \frac{c \cdot Z_c \cdot w(x)}{\min\{c, w(x)\}}
+\end{equation}
+
+Now, computing $\mathbb{E}_{q^*}[(w^*(X))^2]$:
+\begin{align}
+\mathbb{E}_{q^*}[(w^*(X))^2] &= \int_{\mathcal{X}} (w^*(x))^2 q^*(x) \, dx \\
+&= \int_{\mathcal{X}} \left(\frac{c \cdot Z_c \cdot w(x)}{\min\{c, w(x)\}}\right)^2 \cdot \frac{q(x) \cdot \min\{1, w(x)/c\}}{Z_c} \, dx \\
+&= \frac{c^2 \cdot Z_c^2}{Z_c} \int_{\mathcal{X}} \frac{w(x)^2}{\min\{c, w(x)\}^2} \cdot q(x) \cdot \min\{1, w(x)/c\} \, dx \\
+&= c \cdot Z_c \int_{\mathcal{X}} \frac{w(x)^2 \cdot q(x)}{\min\{c, w(x)\}} \, dx \\
+&= Z_c \int_{\mathcal{X}} \frac{c \cdot w(x)^2 \cdot q(x)}{\min\{c, w(x)\}} \, dx
+\end{align}
+
+Since $\frac{c \cdot w(x)}{\min\{c, w(x)\}} = \max\{c, w(x)\}$, we get:
+\begin{equation}
+\mathbb{E}_{q^*}[(w^*(X))^2] = Z_c \cdot \mathbb{E}_q[\max\{w(X), c\} \cdot w(X)]
+\end{equation}
+
+\subsection*{Part 3: Establish the inequality}
+
+We need to show:
+\begin{equation}
+\mathbb{E}_q[\min\{w(X), c\}] \cdot \mathbb{E}_q[\max\{w(X), c\} \cdot w(X)] \leq \mathbb{E}_q[\min\{w(X), c\} \cdot \max\{w(X), c\} \cdot w(X)]
+\end{equation}
+
+Following the hint, define:
+\begin{equation}
+h(w_1, w_2) = [\min\{w_1, c\} - \min\{w_2, c\}][\max\{w_1, c\} \cdot w_1 - \max\{w_2, c\} \cdot w_2]
+\end{equation}
+
+We need to show $h(w_1, w_2) \geq 0$ for all $w_1, w_2 > 0$.
+
+Consider four cases:
+\begin{itemize}
+\item If $w_1, w_2 \leq c$: 
+\begin{equation}
+h(w_1, w_2) = (w_1 - w_2)(c \cdot w_1 - c \cdot w_2) = c(w_1 - w_2)^2 \geq 0
+\end{equation}
+
+\item If $w_1, w_2 \geq c$: 
+\begin{equation}
+h(w_1, w_2) = (c - c)(w_1^2 - w_2^2) = 0
+\end{equation}
+
+\item If $w_1 \leq c < w_2$: 
+\begin{equation}
+h(w_1, w_2) = (w_1 - c)(c \cdot w_1 - w_2^2)
+\end{equation}
+Since $w_1 \leq c$ and $w_2 > c$, we have $w_1 - c \leq 0$ and $c \cdot w_1 \leq c^2 < w_2^2$, so $h \geq 0$
+
+\item If $w_2 \leq c < w_1$: By symmetry with the previous case, $h \geq 0$
+\end{itemize}
+
+Since $h(w_1, w_2) \geq 0$, expanding and taking expectations:
+\begin{equation}
+\mathbb{E}_q[h(w(X), w(Y))] \geq 0
+\end{equation}
+
+where $X$ and $Y$ are independent with the same distribution. Expanding:
+\begin{align}
+0 &\leq \mathbb{E}_q[h(w(X), w(Y))] \\
+&= \mathbb{E}_q[\min\{w(X), c\}] \cdot \mathbb{E}_q[\max\{w(Y), c\} \cdot w(Y)] \\
+&\quad - \mathbb{E}_q[\min\{w(Y), c\}] \cdot \mathbb{E}_q[\max\{w(X), c\} \cdot w(X)] \\
+&\quad + \mathbb{E}_q[\min\{w(Y), c\} \cdot \max\{w(X), c\} \cdot w(X)] \\
+&\quad - \mathbb{E}_q[\min\{w(X), c\} \cdot \max\{w(Y), c\} \cdot w(Y)]
+\end{align}
+
+Since $X$ and $Y$ have the same distribution, the first two terms cancel, and the last two terms combine to give the desired inequality.
+
+\subsection*{Part 4: Deduce $\mathbb{V}_{q^*}(w^*(X)) \leq \mathbb{V}_q(w(X))$}
+
+From part 2: 
+\begin{equation}
+\mathbb{E}_{q^*}[(w^*(X))^2] = Z_c \cdot \mathbb{E}_q[\max\{w(X), c\} \cdot w(X)]
+\end{equation}
+
+Since $\mathbb{E}_{q^*}[w^*(X)] = 1$ (as $w^*$ are importance weights for $\pi$ with respect to $q^*$), we have:
+\begin{equation}
+\mathbb{V}_{q^*}(w^*(X)) = \mathbb{E}_{q^*}[(w^*(X))^2] - 1 = Z_c \cdot \mathbb{E}_q[\max\{w(X), c\} \cdot w(X)] - 1
+\end{equation}
+
+From part 3's inequality:
+\begin{align}
+\mathbb{E}_q[\min\{w(X), c\}] \cdot \mathbb{E}_q[\max\{w(X), c\} \cdot w(X)] &\leq \mathbb{E}_q[\min\{w(X), c\} \cdot \max\{w(X), c\} \cdot w(X)] \\
+&= \mathbb{E}_q[c \cdot w(X)^2]
+\end{align}
+
+where the last equality uses the fact that $\min\{w(X), c\} \cdot \max\{w(X), c\} = c \cdot w(X)$ for all $w(X) > 0$.
+
+Since $Z_c = \mathbb{E}_q[\min\{w(X), c\}/c] = \mathbb{E}_q[\min\{w(X), c\}]/c$, we have:
+\begin{equation}
+Z_c \cdot \mathbb{E}_q[\max\{w(X), c\} \cdot w(X)] \leq \mathbb{E}_q[w(X)^2]
+\end{equation}
+
+Therefore:
+\begin{equation}
+\mathbb{V}_{q^*}(w^*(X)) \leq \mathbb{E}_q[w(X)^2] - 1 = \mathbb{V}_q(w(X))
+\end{equation}
+
+This proves that rejection control reduces the variance of importance weights, making it a useful technique when standard importance sampling has high variance.

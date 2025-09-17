@@ -2,11 +2,12 @@
 .ruff_cache/
 .venv/
 __pycache__/
-ProblemSets/
+ProblemSets/2
+ProblemSets/3
 *.nc
 *.ipynb_checkpoints
 notes/
-
+*.pdf
 # Python packaging
 dist/
 build/

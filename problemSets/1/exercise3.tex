@@ -1,0 +1,102 @@
+\section*{Exercise 3}
+
+\subsection*{Question 1}
+Show that the probability of accepting a proposed $X = x$ in either step (b) or (c) 
+is $\frac{\tilde{\pi}(x)}{M\tilde{q}(x)}$.
+
+For a proposed value $X = x$, we can accept it in two ways:
+\begin{itemize}
+\item Accept in step (b) with probability: $P(\text{accept in (b)}) = \frac{h(x)}{M\tilde{q}(x)}$
+\item Reject in step (b) and accept in step (c)
+\end{itemize}
+
+The probability of rejecting in step (b) is: $1 - \frac{h(x)}{M\tilde{q}(x)}$
+
+Given rejection in step (b), the probability of accepting in step (c) is:
+$$P\Big(\text{accept in (c)} \Big\vert \text{reject in (b)}\Big) = \frac{\tilde{\pi}(x) - h(x)}{M\tilde{q}(x) - h(x)}$$
+
+Therefore, the total probability of acceptance is:
+\begin{align*}
+P(\text{accept}) &= \frac{h(x)}{M\tilde{q}(x)} + \left(1 - \frac{h(x)}{M\tilde{q}(x)}\right) \cdot \frac{\tilde{\pi}(x) - h(x)}{M\tilde{q}(x) - h(x)}\\
+&= \frac{h(x)}{M\tilde{q}(x)} + \frac{M\tilde{q}(x) - h(x)}{M\tilde{q}(x)} \cdot \frac{\tilde{\pi}(x) - h(x)}{M\tilde{q}(x) - h(x)}\\
+&= \frac{h(x)}{M\tilde{q}(x)} + \frac{\tilde{\pi}(x) - h(x)}{M\tilde{q}(x)}\\
+&= \frac{h(x) + \tilde{\pi}(x) - h(x)}{M\tilde{q}(x)} \\
+&= \frac{\tilde{\pi}(x)}{M\tilde{q}(x)}
+\end{align*}
+
+
+\subsection*{Question 2}
+\textbf{Deduce from the previous question that the distribution of the samples accepted by the above algorithm is $\pi$.}
+
+\begin{proof}
+From standard rejection sampling theory, if we propose samples from density $q(x)$ and accept with probability proportional to $\frac{\tilde{\pi}(x)}{M\tilde{q}(x)}$, the accepted samples follow the distribution:
+
+\[p(\text{accepted } X = x) = \frac{q(x) \cdot \frac{\tilde{\pi}(x)}{M\tilde{q}(x)}}{\int_\mathcal{X} q(y) \cdot \frac{\tilde{\pi}(y)}{M\tilde{q}(y)} dy}\]
+
+Since $q(x) = \frac{\tilde{q}(x)}{Z_q}$:
+
+\begin{align*}
+p(\text{accepted } X = x) &= \frac{\frac{\tilde{q}(x)}{Z_q} \cdot \frac{\tilde{\pi}(x)}{M\tilde{q}(x)}}{\int_\mathcal{X} \frac{\tilde{q}(y)}{Z_q} \cdot \frac{\tilde{\pi}(y)}{M\tilde{q}(y)} dy}\\
+&= \frac{\frac{\tilde{\pi}(x)}{MZ_q}}{\int_\mathcal{X} \frac{\tilde{\pi}(y)}{MZ_q} dy} = \frac{\tilde{\pi}(x)}{\int_\mathcal{X} \tilde{\pi}(y) dy} = \frac{\tilde{\pi}(x)}{Z_\pi} = \pi(x)
+\end{align*}
+\end{proof}
+
+\subsection*{Question 3}
+Show that the probability that step (c) has to be carried out is $1 - \frac{\int_\mathcal{X} h(x)dx}{MZ_q}$.
+
+\begin{proof}
+Step (c) is carried out when we reject in step (b). The probability of rejection in step (b) for a sample $X \sim q$ is:
+
+\begin{align*}
+P(\text{reject in (b)}) &= E_q\left[1 - \frac{h(X)}{M\tilde{q}(X)}\right]\\
+&= 1 - E_q\left[\frac{h(X)}{M\tilde{q}(X)}\right]\\
+&= 1 - \int_\mathcal{X} q(x) \cdot \frac{h(x)}{M\tilde{q}(x)} dx\\
+&= 1 - \int_\mathcal{X} \frac{\tilde{q}(x)}{Z_q} \cdot \frac{h(x)}{M\tilde{q}(x)} dx\\
+&= 1 - \frac{1}{MZ_q} \int_\mathcal{X} h(x) dx
+\end{align*}
+\end{proof}
+
+\subsection*{Question 4}
+Let $\tilde{\pi}(x) = \exp(-x^2/2)$ and $\tilde{q}(x) = \exp(-|x|)$. 
+Using the fact that $\tilde{\pi}(x) \geq 1 - x^2/2$ for any $x \in \mathbb{R}$, 
+how could you use the squeeze rejection sampling algorithm to sample 
+from $\pi(x)$. What is the probability of not having to evaluate
+$\tilde{\pi}(x)$? Why could it be beneficial to use this algorithm instead of 
+the standard rejection sampling procedure?
+
+\textbf{Solution:}
+
+We can set $h(x) = \max\{0, 1 - x^2/2\}$. Since $h$ must be non-negative, we have:
+\[h(x) = \begin{cases}
+1 - \frac{x^2}{2} & \text{if } |x| \leq \sqrt{2}\\
+0 & \text{if } |x| > \sqrt{2}
+\end{cases}\]
+
+To find $M$, we need $\tilde{\pi}(x) \leq M\tilde{q}(x)$ for all $x$:
+\[\exp(-x^2/2) \leq M\exp(-|x|)\]
+\[M \geq \exp(|x| - x^2/2)\]
+
+The maximum of $|x| - x^2/2$ occurs at $|x| = 1$, giving $M = \exp(1/2) = \sqrt{e}$.
+
+The probability of not having to evaluate $\tilde{\pi}(x)$ (accepting in step (b)) is:
+\[P(\text{accept in (b)}) = \frac{\int_\mathcal{X} h(x)dx}{MZ_q}\]
+
+where $Z_q = \int_{-\infty}^{\infty} \exp(-|x|)dx = 2$.
+
+\begin{align*}
+\int_\mathcal{X} h(x)dx &= \int_{-\sqrt{2}}^{\sqrt{2}} \left(1 - \frac{x^2}{2}\right)dx\\
+&= \left[x - \frac{x^3}{6}\right]_{-\sqrt{2}}^{\sqrt{2}}\\
+&= 2\sqrt{2} - \frac{2(\sqrt{2})^3}{6}\\
+&= 2\sqrt{2} - \frac{2\sqrt{2}}{3} = \frac{4\sqrt{2}}{3}
+\end{align*}
+
+Therefore:
+\[P(\text{not evaluating } \tilde{\pi}) = \frac{4\sqrt{2}/3}{\sqrt{e} \cdot 2} = \frac{2\sqrt{2}}{3\sqrt{e}} \approx 0.57\]
+
+\textbf{Benefits:}
+\begin{itemize}
+\item The squeeze algorithm avoids computing the expensive $\exp(-x^2/2)$ function with probability $\frac{2\sqrt{2}}{3\sqrt{e}} \approx 0.57$
+\item This is particularly beneficial when $\tilde{\pi}(x)$ is computationally expensive to evaluate
+\item The algorithm maintains the same acceptance rate as standard rejection sampling while reducing computational cost
+\end{itemize}
+

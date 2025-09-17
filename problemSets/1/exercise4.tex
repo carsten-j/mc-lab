@@ -1,0 +1,117 @@
+\section*{Exercise 4}
+
+Consider Marsaglia's polar method:
+
+\begin{itemize}
+    \item Step a: Generate independent $U_1, U_2$ according to $U[-1,1]$ until $Y = U_1^2 + U_2^2 \leq 1$.
+    \item Step b: Define $Z = \sqrt{-2 \log(Y)}$ and return $X_1 = Z \frac{U_1}{\sqrt{Y}}, X_2 = Z \frac{U_2}{\sqrt{Y}}$.
+\end{itemize}
+
+\subsection*{Question 1: Joint Distribution of $Y$ and $\vartheta$}
+
+The joint distribution of $Y = U_1^2 + U_2^2$ and $\vartheta = \arctan2(U_1, U_2)$ has density:
+$$f_{Y,\vartheta}(y, \theta) = \mathbf{1}_{[0,1]}(y) \frac{\mathbf{1}_{[0,2\pi]}(\theta)}{2\pi}$$
+
+Proof:
+
+Since $U_1, U_2$ are independent and uniformly distributed on $[-1,1]$, their joint density is:
+$$f_{U_1,U_2}(u_1, u_2) = \frac{1}{2} \mathbf{1}_{[-1,1]}(u_1) \frac{1}{2}\mathbf{1}_{[-1,1]}(u_2) =  \frac{1}{4} \mathbf{1}_{[-1,1]}(u_1) \mathbf{1}_{[-1,1]}(u_2)$$
+
+We condition on the event $\{U_1^2 + U_2^2 \leq 1\}$. The probability of this event is:
+$$P(U_1^2 + U_2^2 \leq 1) = \frac{\text{Area of unit disk}}{\text{Area of square}} = \frac{\pi}{4}$$
+
+The conditional density is:
+$$f_{U_1,U_2|Y \leq 1}(u_1, u_2) = \frac{f_{U_1,U_2}(u_1, u_2)}{P(U_1^2 + U_2^2 \leq 1)} \mathbf{1}_{\{u_1^2 + u_2^2 \leq 1\}} = \frac{1}{\pi} \mathbf{1}_{\{u_1^2 + u_2^2 \leq 1\}}$$
+
+Now we transform to polar coordinates:
+\begin{itemize}
+    \item $Y = U_1^2 + U_2^2 = R^2$ where $R = \sqrt{U_1^2 + U_2^2}$
+    \item $\vartheta = \arctan2(U_1, U_2)$
+    \item $U_1 = R\cos(\vartheta) = \sqrt{Y}\cos(\vartheta)$
+    \item $U_2 = R\sin(\vartheta) = \sqrt{Y}\sin(\vartheta)$
+\end{itemize}
+
+The Jacobian of the transformation $(U_1, U_2) \to (Y, \vartheta)$ is:
+$$J = \begin{vmatrix}
+\frac{\partial u_1}{\partial y} & \frac{\partial u_1}{\partial \vartheta} \\
+\frac{\partial u_2}{\partial y} & \frac{\partial u_2}{\partial \vartheta}
+\end{vmatrix} = \begin{vmatrix}
+\frac{\cos(\vartheta)}{2\sqrt{y}} & -\sqrt{y}\sin(\vartheta) \\
+\frac{\sin(\vartheta)}{2\sqrt{y}} & \sqrt{y}\cos(\vartheta)
+\end{vmatrix} = \frac{1}{2}$$
+
+Therefore:
+$$f_{Y,\vartheta}(y, \theta) = f_{U_1,U_2|Y \leq 1}(\sqrt{y}\cos(\theta), \sqrt{y}\sin(\theta)) |J| = \frac{1}{\pi} \cdot \frac{1}{2} = \frac{1}{2\pi}$$
+
+for $(y, \theta) \in [0,1] \times [0,2\pi]$, which gives us:
+$$f_{Y,\vartheta}(y, \theta) = \mathbf{1}_{[0,1]}(y) \frac{\mathbf{1}_{[0,2\pi]}(\theta)}{2\pi}$$
+
+This shows that $Y \sim \text{Uniform}[0,1]$ and $\vartheta \sim \text{Uniform}[0,2\pi]$ are independent.
+
+\subsection*{Question 2: Independence and Normality of $X_1$ and $X_2$}
+
+To prove: $X_1$ and $X_2$ are independent standard normal random variables.
+
+From Question 1, we know that $Y \sim \text{Uniform}[0,1]$ and $\vartheta \sim \text{Uniform}[0,2\pi]$ are independent.
+
+Define:
+\begin{itemize}
+    \item $R = \sqrt{Y}$, so $R^2 = Y \sim \text{Uniform}[0,1]$
+    \item $Z = \sqrt{-2\log(Y)}$
+    \item $X_1 = Z \cos(\vartheta) = \sqrt{-2\log(Y)} \cos(\vartheta)$
+    \item $X_2 = Z \sin(\vartheta) = \sqrt{-2\log(Y)} \sin(\vartheta)$
+\end{itemize}
+
+Since $Y \sim \text{Uniform}[0,1]$, we have $-\log(Y) \sim \text{Exponential}(1)$.
+
+Therefore, $-2\log(Y) \sim \text{Exponential}(1/2) = \text{Gamma}(1, 1/2)$.
+
+The transformation $(Y, \vartheta) \to (X_1, X_2)$ is:
+\begin{itemize}
+    \item $X_1 = \sqrt{-2\log(Y)} \cos(\vartheta)$
+    \item $X_2 = \sqrt{-2\log(Y)} \sin(\vartheta)$
+\end{itemize}
+
+This is exactly the Box-Muller transformation in disguise! 
+
+To find the joint density of $(X_1, X_2)$, we use the inverse transformation:
+\begin{itemize}
+    \item $Y = e^{-(x_1^2 + x_2^2)/2}$
+    \item $\vartheta = \arctan2(x_1, x_2)$
+\end{itemize}
+
+The Jacobian is:
+$$J = \begin{vmatrix}
+\frac{\partial y}{\partial x_1} & \frac{\partial y}{\partial x_2} \\
+\frac{\partial \vartheta}{\partial x_1} & \frac{\partial \vartheta}{\partial x_2}
+\end{vmatrix} = \begin{vmatrix}
+-x_1 e^{-(x_1^2 + x_2^2)/2} & -x_2 e^{-(x_1^2 + x_2^2)/2} \\
+\frac{-x_2}{x_1^2 + x_2^2} & \frac{x_1}{x_1^2 + x_2^2}
+\end{vmatrix} = \frac{e^{-(x_1^2 + x_2^2)/2}}{2\pi}$$
+
+The joint density of $(X_1, X_2)$ is:
+$$f_{X_1,X_2}(x_1, x_2) = f_{Y,\vartheta}(e^{-(x_1^2 + x_2^2)/2}, \arctan2(x_1, x_2)) |J|^{-1}$$
+
+$$= \frac{1}{2\pi} \cdot \frac{2\pi}{e^{-(x_1^2 + x_2^2)/2}} = e^{-(x_1^2 + x_2^2)/2}$$
+
+$$= \frac{1}{\sqrt{2\pi}} e^{-x_1^2/2} \cdot \frac{1}{\sqrt{2\pi}} e^{-x_2^2/2}$$
+
+This is the product of two independent standard normal densities, proving that $X_1, X_2 \sim \mathcal{N}(0,1)$ independently.
+
+\subsection*{Question 3: Benefits over Box-Muller Algorithm}
+
+Potential benefits of Marsaglia's polar method over Box-Muller:
+
+\begin{itemize}
+    \item No trigonometric functions: Marsaglia's method avoids computing $\cos$ and $\sin$ functions, which can be computationally expensive.
+    \item Better numerical stability: The method avoids potential numerical issues that can arise with trigonometric function evaluations, especially for arguments close to multiples of $\pi$.
+    \item Simpler implementation: The algorithm only requires:
+    \begin{itemize}
+        \item Uniform random number generation
+        \item Basic arithmetic operations (multiplication, addition, square root, logarithm)
+        \item Simple rejection sampling
+    \end{itemize}
+    \item More efficient on average: While the rejection step means some samples are discarded, the acceptance probability is $\pi/4 \approx 0.785$, so on average only about 27% more uniform samples are needed, which often compensates for avoiding trigonometric computations.
+\end{itemize}
+
+The main trade-off is that Marsaglia's method uses a variable number of uniform random numbers (due to rejection), while Box-Muller always uses exactly two uniform random numbers to produce two normal random numbers.
