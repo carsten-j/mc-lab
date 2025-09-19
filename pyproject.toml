@@ -29,7 +29,7 @@ dependencies = [
     "watermark==2.5.0",
     "statsmodels==0.14.5",
     "seaborn==0.13.2",
-    "pandas==2.2.2",
+    "pandas==2.3.2",
     "numba>=0.61.2",
     "torch>=2.8.0",
 ]
