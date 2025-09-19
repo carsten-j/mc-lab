@@ -17,11 +17,11 @@ from typing import Dict, List, Optional
 import arviz as az
 import numpy as np
 import torch
-import xarray as xr
 from scipy.stats import multivariate_normal
 from tqdm.auto import tqdm
 
 from ._rng import as_generator
+from ._inference_data import create_inference_data
 
 __all__ = [
     "MALAAutoGradSampler",
@@ -483,47 +483,17 @@ class MALAAutoGradSampler:
         thin: int,
     ) -> az.InferenceData:
         """Create ArviZ InferenceData object."""
-        # Create posterior dataset
-        posterior_dict = {}
-        for name, samples in posterior_samples.items():
-            posterior_dict[name] = (["chain", "draw"], samples)
-
-        posterior_ds = xr.Dataset(
-            posterior_dict,
-            coords={
-                "chain": np.arange(n_chains),
-                "draw": np.arange(n_samples),
-            },
+        return create_inference_data(
+            posterior_samples=posterior_samples,
+            sample_stats=sample_stats,
+            n_chains=n_chains,
+            n_samples=n_samples,
+            n_dim=self._n_dim,
+            algorithm_name="MALA with Automatic Gradients",
+            burn_in=burn_in,
+            thin=thin,
+            step_size=self.step_size,
         )
-
-        # Create sample stats dataset
-        sample_stats_dict = {}
-        for name, stats in sample_stats.items():
-            sample_stats_dict[name] = (["chain", "draw"], stats)
-
-        sample_stats_ds = xr.Dataset(
-            sample_stats_dict,
-            coords={
-                "chain": np.arange(n_chains),
-                "draw": np.arange(n_samples),
-            },
-        )
-
-        # Create InferenceData
-        idata = az.InferenceData(
-            posterior=posterior_ds,
-            sample_stats=sample_stats_ds,
-        )
-
-        # Add metadata
-        idata.attrs["sampling_algorithm"] = "MALA with Automatic Gradients"
-        idata.attrs["n_chains"] = n_chains
-        idata.attrs["n_samples"] = n_samples
-        idata.attrs["burn_in"] = burn_in
-        idata.attrs["thin"] = thin
-        idata.attrs["step_size"] = self.step_size
-
-        return idata
 
     def get_acceptance_rates(self, idata: az.InferenceData) -> Dict[str, float]:
         """

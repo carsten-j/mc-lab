@@ -3,8 +3,9 @@ from typing import Dict, Optional, Tuple
 
 import arviz as az
 import numpy as np
-import xarray as xr
 from tqdm.auto import tqdm
+
+from ._inference_data import create_inference_data
 
 
 class GibbsSampler2D:
@@ -283,40 +284,13 @@ class GibbsSampler2D:
         """
         Create ArviZ InferenceData object from samples.
         """
-        # Create coordinates
-        coords = {
-            "chain": np.arange(n_chains),
-            "draw": np.arange(n_samples),
-        }
-
-        # Create posterior dataset
-        posterior_dict = {}
-        for var_name, samples in posterior_samples.items():
-            posterior_dict[var_name] = (["chain", "draw"], samples)
-
-        posterior = xr.Dataset(posterior_dict, coords=coords)
-
-        # Create sample_stats dataset if we have statistics
-        sample_stats_ds = None
-        if sample_stats:
-            sample_stats_dict = {}
-            for stat_name, values in sample_stats.items():
-                sample_stats_dict[stat_name] = (["chain", "draw"], values)
-            sample_stats_ds = xr.Dataset(sample_stats_dict, coords=coords)
-
-        # Add sampling metadata as attributes
-        posterior.attrs.update(
-            {
-                "sampling_method": "Gibbs Sampling",
-                "burn_in": burn_in,
-                "thin": thin,
-            }
+        return create_inference_data(
+            posterior_samples=posterior_samples,
+            sample_stats=sample_stats,
+            n_chains=n_chains,
+            n_samples=n_samples,
+            n_dim=2,  # Gibbs sampler is always 2D
+            algorithm_name="Gibbs Sampling",
+            burn_in=burn_in,
+            thin=thin,
         )
-
-        # Create InferenceData
-        idata = az.InferenceData(
-            posterior=posterior,
-            sample_stats=sample_stats_ds if sample_stats_ds is not None else None,
-        )
-
-        return idata

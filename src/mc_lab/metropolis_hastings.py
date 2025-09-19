@@ -17,10 +17,10 @@ from typing import Dict, List, Optional, Union
 
 import arviz as az
 import numpy as np
-import xarray as xr
 from tqdm.auto import tqdm
 
 from ._rng import as_generator
+from ._inference_data import create_inference_data
 
 __all__ = ["MetropolisHastingsSampler"]
 
@@ -393,54 +393,19 @@ class MetropolisHastingsSampler:
         thin: int,
     ) -> az.InferenceData:
         """Create ArviZ InferenceData object from samples."""
-        # Create coordinates
-        coords = {
-            "chain": np.arange(n_chains),
-            "draw": np.arange(n_samples),
-        }
-
-        if self._n_dim > 1:
-            coords["dim"] = np.arange(self._n_dim)
-
-        # Create posterior dataset
-        posterior_dict = {}
-        for var_name, samples in posterior_samples.items():
-            posterior_dict[var_name] = (["chain", "draw"], samples)
-
-        posterior = xr.Dataset(posterior_dict, coords=coords)
-
-        # Create sample_stats dataset
-        sample_stats_dict = {}
-        for stat_name, values in sample_stats.items():
-            if stat_name == "proposal_scale":
-                if self._n_dim == 1:
-                    sample_stats_dict[stat_name] = (["chain", "draw"], values[:, :, 0])
-                else:
-                    sample_stats_dict[stat_name] = (["chain", "draw", "dim"], values)
-            else:
-                sample_stats_dict[stat_name] = (["chain", "draw"], values)
-
-        sample_stats_ds = xr.Dataset(sample_stats_dict, coords=coords)
-
-        # Add metadata
-        posterior.attrs.update(
-            {
-                "sampling_method": "Metropolis-Hastings",
-                "proposal_type": "Random Walk",
-                "burn_in": burn_in,
-                "thin": thin,
-                "adaptive_scaling": self.adaptive_scaling,
-                "target_acceptance_rate": self.target_acceptance_rate,
-            }
+        return create_inference_data(
+            posterior_samples=posterior_samples,
+            sample_stats=sample_stats,
+            n_chains=n_chains,
+            n_samples=n_samples,
+            n_dim=self._n_dim,
+            algorithm_name="Metropolis-Hastings",
+            burn_in=burn_in,
+            thin=thin,
+            proposal_type="Random Walk",
+            adaptive_scaling=self.adaptive_scaling,
+            target_acceptance_rate=self.target_acceptance_rate,
         )
-
-        # Create InferenceData
-        idata = az.InferenceData(
-            posterior=posterior,
-            sample_stats=sample_stats_ds,
-        )
-
-        return idata
 
     def get_acceptance_rates(self, idata: az.InferenceData) -> Dict[str, float]:
         """
