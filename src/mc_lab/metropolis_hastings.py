@@ -333,10 +333,14 @@ class MetropolisHastingsSampler:
                             current_state[dim_idx]
                         )
 
-                sample_stats["log_likelihood"][chain_idx, sample_idx] = current_log_prob
+                sample_stats["log_likelihood"][chain_idx, sample_idx] = (
+                    float(current_log_prob)
+                    if np.ndim(current_log_prob) == 0
+                    else float(current_log_prob[0])
+                )
                 sample_stats["accepted"][chain_idx, sample_idx] = accept
                 sample_stats["proposal_scale"][chain_idx, sample_idx] = (
-                    self._current_scales[chain_idx]
+                    self._current_scales[chain_idx].copy()
                 )
 
                 sample_idx += 1
@@ -509,7 +513,11 @@ class MetropolisHastingsSampler:
             # Extract final proposal scale
             final_scale = idata.sample_stats["proposal_scale"].values[0, -1]
 
-            if len(final_scale) == 1:
+            if np.isscalar(final_scale) or (
+                hasattr(final_scale, "shape") and final_scale.shape == ()
+            ):
+                return float(final_scale)
+            elif len(final_scale) == 1:
                 return float(final_scale[0])
             else:
                 return final_scale

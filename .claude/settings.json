@@ -8,7 +8,9 @@
       "Bash(mkdir:*)",
       "Bash(ls:*)",
       "Bash(git log:*)",
-      "Bash(python:*)"
+      "Bash(python:*)",
+      "Bash(source:*)",
+      "Bash(make test:*)"
     ],
     "deny": [
       "Bash(git checkout:*)",

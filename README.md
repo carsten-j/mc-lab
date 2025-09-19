@@ -60,7 +60,7 @@ password = pypi-your-actual-token-here
 - **Rejection Sampling** — Basic and advanced methods including Transformed Density Rejection (TDR) — `rejection_sampling.py` and `advanced_rejection_sampling.py`
 - **Importance Sampling** — Weighted sampling with diagnostics and Pareto Smoothed Importance Sampling (PSIS) — `importance_sampling.py` and `PSIS.py`
 - **Multivariate Gaussian** — Cholesky/eigendecomposition with fallback — `multivariate_gaussian.py`
-- **MCMC Methods** — Gibbs sampling, Metropolis-Hastings, and Independent Metropolis-Hastings — `gibbs_sampler_2d.py`, `metropolis_hastings.py`, `independent_metropolis_hastings.py`
+- **MCMC Methods** — Gibbs sampling, Metropolis-Hastings Random Walk, Independent Metropolis-Hastings, Metropolist Adjusted Langevin Algorithm  — `gibbs_sampler_2d.py`, `metropolis_hastings.py`, `independent_metropolis_hastings.py`, `MALA.py`
 - **Transformation Methods** — Various transformation-based samplers — `transformation_methods.py`
 
 ### Utilities

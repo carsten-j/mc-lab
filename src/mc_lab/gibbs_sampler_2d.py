@@ -10,15 +10,93 @@ from tqdm.auto import tqdm
 class GibbsSampler2D:
     """
     Gibbs sampler for 2D joint distributions p(x,y) with ArviZ integration.
-    Samples from the joint distribution using conditional distributions p(x|y) and p(y|x).
-    Returns results as ArviZ InferenceData for advanced diagnostics and visualization.
+
+    This sampler implements the Gibbs sampling algorithm for bivariate distributions
+    by alternately sampling from conditional distributions p(x|y) and p(y|x).
+    The implementation includes comprehensive diagnostics through ArviZ integration
+    and supports multiple chains for convergence assessment.
+
+    Gibbs sampling is particularly effective for distributions where the conditional
+    distributions are easy to sample from, even when the joint distribution is complex.
+    It's guaranteed to converge to the correct target distribution under mild conditions.
+
+    Parameters
+    ----------
+    sample_x_given_y : callable
+        Function that samples from p(x|y). Takes y value, returns sampled x.
+    sample_y_given_x : callable
+        Function that samples from p(y|x). Takes x value, returns sampled y.
+    log_target : callable, optional
+        Function that computes log p(x,y). Used for diagnostics.
+    var_names : tuple of str, default=("x", "y")
+        Names for the two variables.
+
+    Examples
+    --------
+    Sample from a bivariate normal distribution:
+
+    >>> import numpy as np
+    >>> from scipy import stats
+    >>>
+    >>> # Define conditional distributions for bivariate normal
+    >>> def sample_x_given_y(y):
+    ...     # x | y ~ N(rho * y, 1 - rho^2) for rho = 0.5
+    ...     return np.random.normal(0.5 * y, np.sqrt(0.75))
+    >>>
+    >>> def sample_y_given_x(x):
+    ...     # y | x ~ N(rho * x, 1 - rho^2) for rho = 0.5
+    ...     return np.random.normal(0.5 * x, np.sqrt(0.75))
+    >>>
+    >>> def log_joint(x, y):
+    ...     # Log density of bivariate normal with correlation 0.5
+    ...     cov_inv = np.array([[4/3, -2/3], [-2/3, 4/3]])
+    ...     vec = np.array([x, y])
+    ...     return -0.5 * vec @ cov_inv @ vec - np.log(2 * np.pi * np.sqrt(0.75))
+    >>>
+    >>> sampler = GibbsSampler2D(
+    ...     sample_x_given_y, sample_y_given_x, log_joint, var_names=["x", "y"]
+    ... )
+    >>> idata = sampler.sample(n_samples=1000, n_chains=4)
+    >>> print(az.summary(idata))
+
+    Notes
+    -----
+    **Algorithm Overview:**
+
+    The Gibbs sampler alternates between sampling from conditional distributions:
+
+    1. Sample x^(t+1) ~ p(x | y^(t))
+    2. Sample y^(t+1) ~ p(y | x^(t+1))
+    3. Repeat until convergence
+
+    **Convergence Properties:**
+
+    - Gibbs sampling always has acceptance rate 1 (no rejections)
+    - Convergence depends on correlation between variables
+    - Highly correlated variables may lead to slow mixing
+    - Multiple chains help assess convergence
+
+    **When to Use Gibbs Sampling:**
+
+    - When conditional distributions are easy to sample from
+    - For hierarchical models with conjugate priors
+    - When Metropolis-Hastings would have low acceptance rates
+    - For high-dimensional problems with conditional independence
+
+    References
+    ----------
+    .. [1] Geman, S., & Geman, D. (1984). "Stochastic relaxation, Gibbs distributions,
+           and the Bayesian restoration of images." IEEE transactions on pattern
+           analysis and machine intelligence, (6), 721-741.
+    .. [2] Casella, G., & George, E. I. (1992). "Explaining the Gibbs sampler."
+           The American Statistician, 46(3), 167-174.
     """
 
     def __init__(
         self,
         sample_x_given_y: Callable[[float], float],
         sample_y_given_x: Callable[[float], float],
-        log_prob: Optional[Callable[[float, float], float]] = None,
+        log_target: Optional[Callable[[float, float], float]] = None,
         var_names: Tuple[str, str] = ("x", "y"),
     ):
         """
@@ -30,14 +108,14 @@ class GibbsSampler2D:
             Function that samples from p(x|y). Takes y value, returns sampled x.
         sample_y_given_x : callable
             Function that samples from p(y|x). Takes x value, returns sampled y.
-        log_prob : callable, optional
+        log_target : callable, optional
             Function that computes log p(x,y). Used for diagnostics.
         var_names : tuple of str
             Names for the two variables (default: 'x', 'y')
         """
         self.sample_x_given_y = sample_x_given_y
         self.sample_y_given_x = sample_y_given_x
-        self.log_prob = log_prob
+        self.log_target = log_target
         self.var_names = var_names
 
     def sample(
@@ -46,7 +124,7 @@ class GibbsSampler2D:
         n_chains: int = 4,
         burn_in: int = 1000,
         thin: int = 1,
-        initial_state: Optional[np.ndarray] = None,
+        initial_states: Optional[np.ndarray] = None,
         random_seed: Optional[int] = None,
         progressbar: bool = True,
     ) -> az.InferenceData:
@@ -63,7 +141,7 @@ class GibbsSampler2D:
             Number of initial samples to discard per chain.
         thin : int
             Keep every 'thin'-th sample to reduce autocorrelation.
-        initial_state : np.ndarray, optional
+        initial_states : np.ndarray, optional
             Initial (x, y) values. Shape should be (n_chains, 2) or (2,).
             If (2,), the same initial state is used for all chains with small random perturbation.
         random_seed : int, optional
@@ -80,15 +158,18 @@ class GibbsSampler2D:
             np.random.seed(random_seed)
 
         # Setup initial states for all chains
-        if initial_state is None:
+        if initial_states is None:
             initial_states = np.random.randn(n_chains, 2)
-        elif initial_state.shape == (2,):
+        elif initial_states.shape == (2,):
             # Add small random perturbation to avoid identical chains
             initial_states = (
-                initial_state[np.newaxis, :] + np.random.randn(n_chains, 2) * 0.1
+                initial_states[np.newaxis, :] + np.random.randn(n_chains, 2) * 0.1
             )
-        else:
-            initial_states = initial_state
+        elif initial_states.shape[0] != n_chains:
+            raise ValueError(
+                f"initial_states shape {initial_states.shape} doesn't match "
+                f"n_chains {n_chains}"
+            )
 
         # Storage for all chains
         total_iterations = burn_in + n_samples * thin
@@ -99,9 +180,8 @@ class GibbsSampler2D:
 
         # Sample statistics storage
         sample_stats = {}
-        if self.log_prob is not None:
+        if self.log_target is not None:
             sample_stats["log_likelihood"] = np.zeros((n_chains, n_samples))
-            sample_stats["lp"] = np.zeros((n_chains, n_samples))  # log posterior
 
         # Run each chain
         for chain_idx in range(n_chains):
@@ -131,11 +211,14 @@ class GibbsSampler2D:
                         current_state[1]
                     )
 
-                    # Compute sample statistics if log_prob is provided
-                    if self.log_prob is not None:
-                        lp = self.log_prob(current_state[0], current_state[1])
-                        sample_stats["log_likelihood"][chain_idx, sample_idx] = lp
-                        sample_stats["lp"][chain_idx, sample_idx] = lp
+                    # Compute sample statistics if log_target is provided
+                    if self.log_target is not None:
+                        log_likelihood = self.log_target(
+                            current_state[0], current_state[1]
+                        )
+                        sample_stats["log_likelihood"][chain_idx, sample_idx] = (
+                            log_likelihood
+                        )
 
                     sample_idx += 1
 
@@ -161,6 +244,32 @@ class GibbsSampler2D:
         )
 
         return idata
+
+    def get_acceptance_rates(self, idata: az.InferenceData) -> Dict[str, float]:
+        """
+        Get acceptance rates from InferenceData.
+
+        Note: Gibbs sampling always has 100% acceptance rate since proposals
+        are always accepted. This method is provided for interface consistency
+        with other MCMC samplers.
+
+        Parameters
+        ----------
+        idata : arviz.InferenceData
+            InferenceData from sampling.
+
+        Returns
+        -------
+        rates : dict
+            Acceptance rates (always 1.0 for Gibbs sampling).
+        """
+        n_chains = idata.posterior.sizes["chain"]
+
+        rates = {"overall": 1.0}
+        for chain in range(n_chains):
+            rates[f"chain_{chain}"] = 1.0
+
+        return rates
 
     def _create_inference_data(
         self,
@@ -196,9 +305,13 @@ class GibbsSampler2D:
             sample_stats_ds = xr.Dataset(sample_stats_dict, coords=coords)
 
         # Add sampling metadata as attributes
-        posterior.attrs["sampling_method"] = "Gibbs Sampling"
-        posterior.attrs["burn_in"] = burn_in
-        posterior.attrs["thin"] = thin
+        posterior.attrs.update(
+            {
+                "sampling_method": "Gibbs Sampling",
+                "burn_in": burn_in,
+                "thin": thin,
+            }
+        )
 
         # Create InferenceData
         idata = az.InferenceData(
