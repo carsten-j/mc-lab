@@ -297,7 +297,7 @@ def main():
             numpy_once = None
 
         # Time Jöhnk
-        j_avg, j_min = bench_callable(johnk_once, repeats=args.repeats)
+        _, j_min = bench_callable(johnk_once, repeats=args.repeats)
         j_thru = (N / j_min) / 1e6
 
         # Time NumPy baseline (optional)
@@ -305,14 +305,14 @@ def main():
             n_avg, n_min = bench_callable(numpy_once, repeats=args.repeats)
             n_thru = (N / n_min) / 1e6
         else:
-            n_avg = n_min = n_thru = math.nan
+            _ = n_min = n_thru = math.nan
 
         # Time SciPy baseline
         if scipy_once is not None:
-            s_avg, s_min = bench_callable(scipy_once, repeats=args.repeats)
+            _, s_min = bench_callable(scipy_once, repeats=args.repeats)
             s_thru = (N / s_min) / 1e6
         else:
-            s_avg = s_min = s_thru = math.nan
+            _ = s_min = s_thru = math.nan
 
         # Accuracy on a single Jöhnk draw
         x = johnk_once()

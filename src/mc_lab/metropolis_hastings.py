@@ -19,8 +19,8 @@ import arviz as az
 import numpy as np
 from tqdm.auto import tqdm
 
-from ._rng import as_generator
 from ._inference_data import create_inference_data
+from ._rng import as_generator
 
 __all__ = ["MetropolisHastingsSampler"]
 
@@ -430,64 +430,3 @@ class MetropolisHastingsSampler:
         rates["overall"] = float(np.mean(accepted))
 
         return rates
-
-    def tune_proposal_scale(
-        self,
-        initial_scale: Union[float, np.ndarray] = 1.0,
-        target_samples: int = 1000,
-        random_seed: Optional[int] = None,
-    ) -> Union[float, np.ndarray]:
-        """
-        Tune proposal scale to achieve target acceptance rate.
-
-        This is a standalone tuning method that can be run before main sampling
-        to find good proposal scales.
-
-        Parameters
-        ----------
-        initial_scale : float or array-like, default=1.0
-            Starting proposal scale.
-        target_samples : int, default=1000
-            Number of samples to use for tuning.
-        random_seed : int, optional
-            Random seed for reproducibility.
-
-        Returns
-        -------
-        tuned_scale : float or array
-            Tuned proposal scale(s).
-        """
-        # Temporarily set parameters for tuning
-        original_scale = self.proposal_scale
-        original_adaptive = self.adaptive_scaling
-
-        self.proposal_scale = np.atleast_1d(initial_scale)
-        self.adaptive_scaling = True
-
-        try:
-            # Run short sampling for tuning
-            idata = self.sample(
-                n_samples=target_samples,
-                n_chains=1,
-                burn_in=target_samples // 2,
-                thin=1,
-                random_seed=random_seed,
-                progressbar=False,
-            )
-
-            # Extract final proposal scale
-            final_scale = idata.sample_stats["proposal_scale"].values[0, -1]
-
-            if np.isscalar(final_scale) or (
-                hasattr(final_scale, "shape") and final_scale.shape == ()
-            ):
-                return float(final_scale)
-            elif len(final_scale) == 1:
-                return float(final_scale[0])
-            else:
-                return final_scale
-
-        finally:
-            # Restore original parameters
-            self.proposal_scale = original_scale
-            self.adaptive_scaling = original_adaptive

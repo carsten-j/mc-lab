@@ -85,7 +85,7 @@ class TestMetropolisHastingsSampler:
         )
 
         # Kolmogorov-Smirnov test
-        ks_stat, p_value = stats.kstest(all_samples, stats.norm.cdf)
+        _, p_value = stats.kstest(all_samples, stats.norm.cdf)
         assert p_value > 0.01, f"KS test failed: p-value {p_value:.4f} < 0.01"
 
         print(
@@ -540,49 +540,3 @@ class TestMetropolisHastingsSampler:
 
         print(f"Performance - 5D, 10K samples, 2 chains: {elapsed_time:.2f} seconds")
         print(f"Performance - Final means: {sample_means}")
-
-    def test_tune_proposal_scale_method(self, random_seed):
-        """
-        Test the standalone proposal scale tuning method.
-        """
-
-        def log_normal(x):
-            return -0.5 * x**2 - 0.5 * np.log(2 * np.pi)
-
-        sampler = MetropolisHastingsSampler(
-            log_target=log_normal,
-            proposal_scale=1.0,  # Will be overridden by tuning
-        )
-
-        # Tune from a bad initial scale
-        tuned_scale = sampler.tune_proposal_scale(
-            initial_scale=0.01,  # Very small
-            target_samples=500,
-            random_seed=random_seed,
-        )
-
-        assert isinstance(tuned_scale, float), "Should return float for 1D"
-        assert tuned_scale > 0.01, f"Should increase small scale: {tuned_scale}"
-        assert tuned_scale < 5.0, f"Should not be too large: {tuned_scale}"
-
-        # Test the tuned scale gives reasonable acceptance rate
-        sampler.proposal_scale = np.array([tuned_scale])
-        sampler.adaptive_scaling = False  # Use fixed tuned scale
-
-        idata = sampler.sample(
-            n_samples=1000,
-            n_chains=1,
-            burn_in=100,
-            random_seed=random_seed + 1,
-            progressbar=False,
-        )
-
-        acceptance_rate = sampler.get_acceptance_rates(idata)["overall"]
-        assert 0.2 < acceptance_rate < 0.6, (
-            f"Tuned scale gives poor acceptance rate: {acceptance_rate:.3f}"
-        )
-
-        print(
-            f"Tuning - Tuned scale: {tuned_scale:.3f}, "
-            f"Acceptance rate: {acceptance_rate:.3f}"
-        )

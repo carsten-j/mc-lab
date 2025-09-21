@@ -18,8 +18,8 @@ import numpy as np
 from scipy.stats import multivariate_normal
 from tqdm.auto import tqdm
 
-from ._rng import as_generator
 from ._inference_data import create_inference_data
+from ._rng import as_generator
 
 __all__ = ["MALASampler", "mala"]
 
