@@ -17,7 +17,13 @@ from typing import Dict, List, Optional, Union
 
 import arviz as az
 import numpy as np
-from tqdm.auto import tqdm
+
+try:
+    # Try notebook-specific tqdm first for better Jupyter integration
+    from tqdm.notebook import tqdm
+except ImportError:
+    # Fallback to auto
+    from tqdm.auto import tqdm
 
 from ._inference_data import create_inference_data
 from ._rng import as_generator
@@ -286,6 +292,9 @@ class MetropolisHastingsSampler:
                 desc=f"Chain {chain_idx + 1}",
                 leave=True,
                 dynamic_ncols=True,
+                disable=False,
+                file=None,  # Let tqdm choose the best output stream
+                ascii=False,
             )
 
         for iteration in range(total_iterations):
@@ -345,7 +354,11 @@ class MetropolisHastingsSampler:
 
                 sample_idx += 1
 
-                if pbar is not None:
+            # Update progress bar
+            if pbar is not None:
+                pbar.update(1)
+                # Update postfix with current statistics if we have samples
+                if sample_idx > 0:
                     current_accept_rate = np.mean(
                         sample_stats["accepted"][chain_idx, :sample_idx]
                     )
@@ -354,11 +367,15 @@ class MetropolisHastingsSampler:
                         accept_rate=f"{current_accept_rate:.3f}",
                     )
 
-            if pbar is not None:
-                pbar.update(1)
-
         if pbar is not None:
             pbar.close()
+            # Small delay to prevent display race conditions in notebooks
+            try:
+                import time
+
+                time.sleep(0.01)  # 10ms delay
+            except ImportError:
+                pass
 
     def _adapt_proposal_scale(self, chain_idx: int, acceptance_rate: float) -> None:
         """Adapt proposal scale based on recent acceptance rate."""
