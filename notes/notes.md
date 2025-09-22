@@ -18,6 +18,13 @@ Gibbs
 Opgave 5
 
 
+
+## Thinning
+https://besjournals.onlinelibrary.wiley.com/doi/pdf/10.1111/j.2041-210X.2011.00131.x#:~:text=3.,MCMC%20appeared%20in%20ecological%20publications.
+https://mc-stan.org/docs/reference-manual/analysis.html#effective-sample-size.section
+https://discourse.julialang.org/t/thinning-mcmc-posteriors-to-reduce-autocorrelation/85254/3
+
+
 ## Pseudo-marginal MCMC
 https://lips.cs.princeton.edu/pseudo-marginal-mcmc/
 https://darrenjw.wordpress.com/2010/09/20/the-pseudo-marginal-approach-to-exact-approximate-mcmc-algorithms/

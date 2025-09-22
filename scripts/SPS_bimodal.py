@@ -4,6 +4,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.stats import norm
 
+import sys
+sys.path.append('../src')
+from mc_lab.metropolis_hastings import MetropolisHastingsSampler
+
 
 class StereographicProjectionSampler1D:
     """
@@ -169,29 +173,31 @@ def compare_samplers_bimodal():
     # Create bimodal distribution
     bimodal = BimodalDistribution(mu1=-4, sigma1=0.8, mu2=3, sigma2=1.2, weight=0.4)
 
-    # Standard Random Walk Metropolis
-    def rwm_step(x_current, log_density_func, step_size=0.5):
-        x_proposed = x_current + np.random.normal(0, step_size)
-        log_ratio = log_density_func(x_proposed) - log_density_func(x_current)
-        if np.log(np.random.rand()) < log_ratio:
-            return x_proposed, True
-        return x_current, False
-
-    def rwm_sample(x_init, log_density_func, n_samples, step_size=0.5, burn_in=1000):
-        samples = np.zeros(n_samples)
-        x_current = x_init
-        n_accepted = 0
-
-        for _ in range(burn_in):
-            x_current, _ = rwm_step(x_current, log_density_func, step_size)
-
-        for i in range(n_samples):
-            x_current, accepted = rwm_step(x_current, log_density_func, step_size)
-            samples[i] = x_current
-            if accepted:
-                n_accepted += 1
-
-        return samples, n_accepted / n_samples
+    # Random Walk Metropolis using MetropolisHastingsSampler
+    def rwm_sample_with_mh(x_init, log_density_func, n_samples, step_size=0.5, burn_in=1000):
+        """Wrapper to use MetropolisHastingsSampler with specified parameters"""
+        sampler = MetropolisHastingsSampler(
+            log_target=log_density_func,
+            proposal_scale=step_size,
+            var_names=['x'],
+            adaptive_scaling=False  # Disable adaptation to match custom behavior
+        )
+        
+        # Sample using the MH sampler
+        idata = sampler.sample(
+            n_samples=n_samples,
+            n_chains=1,
+            burn_in=burn_in,
+            initial_states=np.array([x_init]),
+            progressbar=False
+        )
+        
+        # Extract samples and acceptance rate
+        samples = idata.posterior['x'].values[0]  # Get samples from chain 0
+        acceptance_rates = sampler.get_acceptance_rates(idata)
+        accept_rate = acceptance_rates['overall']
+        
+        return samples, accept_rate
 
     # Run both samplers
     n_samples = 100000
@@ -223,7 +229,7 @@ def compare_samplers_bimodal():
     def run_rwm_small():
         nonlocal rwm_small_results
         if rwm_small_results is None:
-            rwm_small_results = rwm_sample(
+            rwm_small_results = rwm_sample_with_mh(
                 x_init, bimodal.log_density, n_samples, step_size=0.5, burn_in=1000
             )
         return rwm_small_results
@@ -238,7 +244,7 @@ def compare_samplers_bimodal():
     def run_rwm_large():
         nonlocal rwm_large_results
         if rwm_large_results is None:
-            rwm_large_results = rwm_sample(
+            rwm_large_results = rwm_sample_with_mh(
                 x_init, bimodal.log_density, n_samples, step_size=2.0, burn_in=1000
             )
         return rwm_large_results
