@@ -60,8 +60,15 @@ password = pypi-your-actual-token-here
 - **Rejection Sampling** — Basic and advanced methods including Transformed Density Rejection (TDR) — `rejection_sampling.py` and `advanced_rejection_sampling.py`
 - **Importance Sampling** — Weighted sampling with diagnostics and Pareto Smoothed Importance Sampling (PSIS) — `importance_sampling.py` and `PSIS.py`
 - **Multivariate Gaussian** — Cholesky/eigendecomposition with fallback — `multivariate_gaussian.py`
-- **MCMC Methods** — Gibbs sampling, Metropolis-Hastings Random Walk, Independent Metropolis-Hastings, Metropolist Adjusted Langevin Algorithm  — `gibbs_sampler_2d.py`, `metropolis_hastings.py`, `independent_metropolis_hastings.py`, `MALA.py`
+- **MCMC Methods** — Gibbs sampling, Metropolis-Hastings Random Walk, Independent Metropolis-Hastings, Metropolist Adjusted Langevin Algorithm, Stereographic MCMC, Slide Sampler, Elliptic Slide Sampler  — `gibbs_sampler_2d.py`, `metropolis_hastings.py`, `independent_metropolis_hastings.py`, `MALA.py`
 - **Transformation Methods** — Various transformation-based samplers — `transformation_methods.py`
+
+### Elliptic Slice Sampler Visualisation
+Check out this page: https://wonderful-meadow-032830e03.2.azurestaticapps.net/. Source located in ess-visualizer folder. Can be deployed as a static web app on Azure using this command
+
+```bash
+swa deploy .\ess-visualizer\ --env production  --verbose --deployment-token <insert your token here>
+```
 
 ### Utilities
 
