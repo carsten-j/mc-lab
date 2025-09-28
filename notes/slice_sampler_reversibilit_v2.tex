@@ -1,0 +1,129 @@
+\documentclass[12pt]{article}
+\usepackage{amsmath, amssymb, amsthm}
+\usepackage{enumitem}
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}
+\newtheorem{theorem}{Theorem}
+\newtheorem{proofsection}{Justification}
+
+\usepackage[T1]{fontenc}
+\usepackage{lmodern} % Enhanced Computer Modern
+
+
+\title{Report: Reversibility of the Slice Sampler with Stepping-Out and Shrinkage}
+\author{}
+\date{}
+
+\begin{document}
+
+\maketitle
+
+\section{Introduction}
+This report provides a detailed summary of the reversibility of the Markov chain induced by the slice sampling algorithm when using the stepping-out and shrinkage procedures. The discussion clarifies a common point of confusion: the role of the auxiliary variable \( u \) and the symmetry argument that ensures the detailed balance condition holds. The initial, flawed argument based on the stepping-out interval being identical in the forward and reverse transitions is corrected, and a rigorous explanation is presented.
+
+\section{The Slice Sampling Algorithm}
+The goal is to sample from a target distribution with density \( \pi(x) \propto f(x) \). The slice sampler introduces an auxiliary variable \( u \) to create a uniform distribution over the region under the density curve.
+
+\begin{definition}[Joint Distribution]
+The joint density of \( (x, u) \) is defined as:
+\[
+p(x, u) = 
+\begin{cases} 
+1 & \text{if } 0 \le u \le f(x), \\
+0 & \text{otherwise}.
+\end{cases}
+\]
+It is straightforward to verify that marginalizing over \( u \) yields \( p(x) \propto f(x) \).
+\end{definition}
+
+The algorithm proceeds by alternately sampling from the conditional distributions:
+\begin{enumerate}
+    \item \( u \mid x \): Sample \( u \sim \text{Uniform}[0, f(x)] \).
+    \item \( x \mid u \): Sample \( x \) uniformly from the ``slice'' \( S(u) = \{ x : f(x) \ge u \} \).
+\end{enumerate}
+
+Sampling directly from \( S(u) \) can be challenging. The stepping-out and shrinkage procedures provide a practical method to sample (approximately) uniformly from \( S(u) \).
+
+\section{Stepping-Out and Shrinkage Procedures}
+Given the current state \( x_0 \) and the auxiliary variable \( u \sim \text{Uniform}[0, f(x_0)] \), the goal is to sample a new state \( x_1 \) uniformly from \( S(u) \).
+
+\begin{enumerate}[label=\textbf{Step \arabic*.}]
+    \item \textbf{Stepping-Out:} An initial interval \( I_0 = [L, R] \) of width \( w \) is constructed around \( x_0 \). A standard method is to set \( L = x_0 - w \cdot \rho \) and \( R = L + w \), where \( \rho \sim \text{Uniform}(0,1) \). This interval is then expanded in steps of size \( w \) to the left and right until both ends are outside the slice, i.e., \( f(L) \le u \) and \( f(R) \le u \). This ensures \( S(u) \subseteq I_0 \).
+    \item \textbf{Shrinkage:}
+    \begin{enumerate}
+        \item Propose a point \( x' \) uniformly from \( [L, R] \).
+        \item If \( x' \in S(u) \) (i.e., \( f(x') \ge u \)), accept it as the new state \( x_1 \).
+        \item Otherwise, shrink the interval:
+        \begin{itemize}
+            \item If \( x' < x_0 \), set \( L = x' \).
+            \item If \( x' > x_0 \), set \( R = x' \).
+        \end{itemize}
+        \item Repeat from (a) until a point is accepted.
+    \end{enumerate}
+\end{enumerate}
+A critical property of this shrinkage procedure is that the final accepted point \( x_1 \) is distributed uniformly over \( S(u) \), regardless of the initial interval \( I_0 \), provided \( I_0 \supseteq S(u) \). The starting point \( x_0 \) only influences the efficiency of the search, not the distribution of the outcome.
+
+\section{Markov Chain Transition Kernel and Reversibility}
+Let \( T(x_0 \to x_1) \) denote the transition probability density from \( x_0 \) to \( x_1 \) for the full slice sampler. This can be decomposed by conditioning on the auxiliary variable \( u \).
+
+\subsection{Transition Kernel Conditioned on \( u \)}
+Given a fixed \( u \), the transition is determined solely by the stepping-out/shrinkage process. Let \( T_u(x_0 \to x_1) \) be the conditional transition density. The key insight is:
+\[
+T_u(x_0 \to x_1) = \frac{1}{|S(u)|} \quad \text{for all } x_1 \in S(u),
+\]
+and \( T_u(x_0 \to x_1) = 0 \) otherwise. Here, \( |S(u)| \) is the total length (or Lebesgue measure) of the slice.
+
+This follows from the property of the shrinkage procedure: it results in a uniform sample from \( S(u) \). Importantly, this conditional density \textbf{does not depend on} \( x_0 \), except for the requirement that \( x_0 \in S(u) \).
+
+\subsection{Full Transition Kernel}
+The full kernel is obtained by integrating over the auxiliary variable \( u \), which is generated from the current state \( x_0 \):
+\[
+T(x_0 \to x_1) = \int_{0}^{f(x_0)} \frac{1}{f(x_0)} \cdot T_u(x_0 \to x_1) \, du.
+\]
+However, \( T_u(x_0 \to x_1) > 0 \) only if both \( x_0 \) and \( x_1 \) are in \( S(u) \), which requires \( u \le \min(f(x_0), f(x_1)) \). Therefore, the integral simplifies to:
+\[
+T(x_0 \to x_1) = \frac{1}{f(x_0)} \int_{0}^{\min(f(x_0), f(x_1))} \frac{1}{|S(u)|} \, du. \tag{1}
+\]
+
+\section{Proof of Reversibility}
+A Markov chain is reversible with respect to \( \pi(x) \) if it satisfies the detailed balance condition:
+\[
+\pi(x_0) \, T(x_0 \to x_1) = \pi(x_1) \, T(x_1 \to x_0).
+\]
+Since \( \pi(x) \propto f(x) \), we can equivalently show:
+\[
+f(x_0) \, T(x_0 \to x_1) = f(x_1) \, T(x_1 \to x_0). \tag{2}
+\]
+
+\subsection{Constructing the Reverse Kernel}
+The reverse transition probability \( T(x_1 \to x_0) \) is defined analogously. A new auxiliary variable \( u' \) is drawn from \( \text{Uniform}[0, f(x_1)] \), and the stepping-out/shrinkage procedure is run starting from \( x_1 \):
+\[
+T(x_1 \to x_0) = \int_{0}^{f(x_1)} \frac{1}{f(x_1)} \cdot T_{u'}(x_1 \to x_0) \, du'.
+\]
+Again, \( T_{u'}(x_1 \to x_0) > 0 \) only if \( u' \le \min(f(x_0), f(x_1)) \), and within this range, \( T_{u'}(x_1 \to x_0) = 1 / |S(u')| \). Renaming the dummy variable \( u' \) to \( u \), we get:
+\[
+T(x_1 \to x_0) = \frac{1}{f(x_1)} \int_{0}^{\min(f(x_0), f(x_1))} \frac{1}{|S(u)|} \, du. \tag{3}
+\]
+
+\subsection{The Symmetry Argument and Final Proof}
+Comparing equations (1) and (3), we see that the integrals are identical:
+\[
+\int_{0}^{\min(f(x_0), f(x_1))} \frac{1}{|S(u)|} \, du.
+\]
+This common integral represents the area under the same function \( 1/|S(u)| \) over the same limits. The asymmetry in the pre-factors \( 1/f(x_0) \) and \( 1/f(x_1) \) is precisely what is balanced by the target density \( \pi(x) \propto f(x) \) in the detailed balance condition (2).
+
+Multiplying both sides of (1) by \( f(x_0) \) and both sides of (3) by \( f(x_1) \) yields:
+\[
+f(x_0) T(x_0 \to x_1) = \int_{0}^{m} \frac{1}{|S(u)|} du = f(x_1) T(x_1 \to x_0),
+\]
+where \( m = \min(f(x_0), f(x_1)) \). This completes the proof of reversibility.
+
+\section{Summary}
+The reversibility of the slice sampler with stepping-out and shrinkage hinges on two key points:
+\begin{enumerate}
+    \item \textbf{Conditional Uniformity:} Given \( u \), the shrinkage procedure samples uniformly from \( S(u) \), making the conditional transition kernel \( T_u(\cdot \to \cdot) \) symmetric. It depends only on the fixed set \( S(u) \), not on the starting point.
+    \item \textbf{Integration over \( u \):} The integration limits for \( u \) in the forward and reverse transitions are the same (\( 0 \) to \( \min(f(x_0), f(x_1)) \)), and the integrand \( 1/|S(u)| \) is identical. The differing densities for generating \( u \) (\( 1/f(x_0) \) vs. \( 1/f(x_1) \)) are counteracted by the form of the target distribution \( \pi(x) \propto f(x) \) in the detailed balance equation.
+\end{enumerate}
+The initial, incorrect intuition was to assume the stepping-out interval \( I_0 \) would be the same in the reverse transition. The correct argument bypasses this by focusing on the ultimate uniformity of the sample from \( S(u) \) and the matching integration domains.
+
+\end{document}
