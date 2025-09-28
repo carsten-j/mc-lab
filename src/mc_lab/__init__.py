@@ -1,3 +1,5 @@
+from .barker_mcmc import BarkerMCMCSampler
+from .metropolis_hastings import MetropolisHastingsSampler
 from .multivariate_gaussian import sample_multivariate_gaussian
 
 
@@ -7,5 +9,7 @@ def hello() -> str:
 
 __all__ = [
     "sample_multivariate_gaussian",
+    "MetropolisHastingsSampler",
+    "BarkerMCMCSampler",
     "hello",
 ]

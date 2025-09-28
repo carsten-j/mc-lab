@@ -127,3 +127,7 @@ https://bjlkeng.io/posts/bayesian-learning-via-stochastic-gradient-langevin-dyna
 https://abdulfatir.com/blog/2020/Langevin-Monte-Carlo/
 
 
+
+
+## Gaussians
+https://medium.com/mti-technology/how-to-generate-gaussian-samples-347c391b7959

@@ -1,0 +1,90 @@
+\documentclass{article}
+\usepackage{amsmath, amsthm, amssymb}
+\usepackage{xcolor}
+\usepackage[framemethod=TikZ]{mdframed}
+
+% Load Computer Modern fonts explicitly
+\usepackage[T1]{fontenc}
+\usepackage{lmodern} % Enhanced Computer Modern
+
+% Define colors to match the original
+\definecolor{lightblue}{RGB}{230, 240, 250}
+\definecolor{darkblue}{RGB}{0, 100, 150}
+\definecolor{lightpink}{RGB}{250, 230, 240}
+\definecolor{darkred}{RGB}{150, 0, 50}
+
+% Define theorem environments with colored boxes
+\mdfdefinestyle{blueframe}{
+    backgroundcolor=lightblue,
+    leftline=true,
+    rightline=false,
+    topline=false,
+    bottomline=false,
+    linecolor=darkblue,
+    linewidth=3pt,
+    innerleftmargin=10pt,
+    innerrightmargin=10pt,
+    innertopmargin=10pt,
+    innerbottommargin=10pt
+}
+
+\mdfdefinestyle{redframe}{
+    backgroundcolor=lightpink,
+    leftline=true,
+    rightline=false,
+    topline=false,
+    bottomline=false,
+    linecolor=darkred,
+    linewidth=3pt,
+    innerleftmargin=10pt,
+    innerrightmargin=10pt,
+    innertopmargin=10pt,
+    innerbottommargin=10pt
+}
+
+% Define Computer Modern Sans Serif command
+\DeclareFixedFont{\cmsans}{T1}{cmss}{bx}{n}{12pt}
+
+\newtheorem*{corollary}{Corollary}
+\newtheorem*{definition}{Definition}
+\newtheorem*{remark}{Remark}
+
+\begin{document}
+
+\begin{mdframed}[style=blueframe]
+\begin{corollary}[1.1]
+Let $(\Omega, \mathcal{B}, \mu, \mathrm{T})$ be an \textcolor{red}{PPS}. If $f \in L^2(\Omega)$, then
+\[
+\frac{1}{n}\sum_{i=1}^{n} f \circ \mathrm{T}^i \xrightarrow{L^2} \bar{f} \quad \text{as} \quad n \to \infty
+\]
+where $\bar{f} \in L^2(\Omega)$ is T-invariant. Furthermore, if $(\Omega, \mathcal{B}, \mu, \mathrm{T})$ is ergodic, then
+\[
+\bar{f} = \int_{\Omega} f \, d\mu.
+\]
+\end{corollary}
+\end{mdframed}
+
+\textit{Proof.} Note that $L^2(\Omega)$ is a Hilbert space. Let $\mathrm{U}f := f \circ \mathrm{T}$. Since $\|\mathrm{U}f \circ \mathrm{T}\|_2 = \|f\|_2$ for $f \in L^2(\Omega)$, U is unitary. Hence, the statement is a direct implication of \textcolor{red}{Theorem 1}. Furthermore, if the \textcolor{red}{PPS} is ergodic, then by \textcolor{red}{Lemma 1}, the T-invariant subspace $\mathcal{I}$ contains only constant functions. Therefore, the orthogonal projection of $f$ onto $\mathcal{I}$ is its expectation. \hfill $\#$
+
+\begin{remark}[6]
+The sum still converges without ergodicity, but \textit{this is not very useful}, since we do not know the form of $\bar{f}$. With ergodicity, we know $\bar{f}$ is a constant function. Hence, we can simply pick any starting point $\omega \in \Omega$ and compute $f \circ \mathrm{T}^i(\omega)$ along the way to obtain the same constant $\bar{f}$, without worrying about the entire functional space.
+\end{remark}
+
+% Section title using Computer Modern Sans Serif explicitly
+{\cmsans 3\quad Markov Chains under the Language of Ergodicity}
+
+\vspace{0.5em}
+
+Now we want to rephrase what we already understand about Markov chains under the language of von Neumann's Ergodicity Theorem.
+
+\begin{mdframed}[style=redframe]
+\begin{definition}[4 (Subshift of Finite Type)]
+Let $S$ with be a \textit{finite set of states}. Let $\mathbf{A} = (A_{ij})_{S \times S}$ be a adjacency matrix with $A_{ij} \in \{0,1\}$ and without rows or columns be entirely zero. Let $\Omega_A$ be defined as the space of possible sequences
+\[
+\Omega_A := \{\omega = (\omega_0, \omega_1, \ldots) : A_{\omega_i, \omega_{i+1}} = 1 \,\forall i\}.
+\]
+A \textcolor{red}{Subshift of Finite Type (SFT)} with states $S$ with adjacency matrix $\mathbf{A}$ is the triple $(\Omega_A, d, \mathrm{T})$ where $d(\omega, \omega') = 2^{-\min\{k \geq 0 : \omega_k \neq \omega'_k\}}$ is a metric and $\mathrm{T}(\omega_0, \omega_1, \ldots) = (\omega_1, \omega_2, \ldots)$ is a shift transformation.
+\end{definition}
+\end{mdframed}
+
+\end{document}
