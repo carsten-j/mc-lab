@@ -1,25 +1,103 @@
-\documentclass[12pt]{article}
+\documentclass[12pt, oneside, paper=A4, DIV=15, BCOR=0mm, abstract=true, headings=small]{scrartcl}
 \usepackage{amsmath, amssymb, amsthm}
 \usepackage{enumitem}
-\theoremstyle{definition}
-\newtheorem{definition}{Definition}
-\newtheorem{theorem}{Theorem}
-\newtheorem{proofsection}{Justification}
-
+\usepackage[margin=2cm]{geometry}
 \usepackage[T1]{fontenc}
 \usepackage{lmodern} % Enhanced Computer Modern
+\usepackage{titlesec}
+\usepackage[framemethod=TikZ]{mdframed}
+
+% Define colors to match the original
+\definecolor{lightblue}{RGB}{230, 240, 250}
+\definecolor{darkblue}{RGB}{0, 100, 150}
+\definecolor{lightpink}{RGB}{250, 230, 240}
+\definecolor{darkred}{RGB}{150, 0, 50}
+\definecolor{lightgreen}{RGB}{230, 250, 240}
+\definecolor{darkgreen}{RGB}{0, 150, 50}
 
 
-\title{Report: Reversibility of the Slice Sampler with Stepping-Out and Shrinkage}
-\author{}
+% Define theorem environments with colored boxes
+\mdfdefinestyle{blueframe}{
+    backgroundcolor=lightblue,
+    leftline=true,
+    rightline=false,
+    topline=false,
+    bottomline=false,
+    linecolor=darkblue,
+    linewidth=3pt,
+    innerleftmargin=10pt,
+    innerrightmargin=10pt,
+    innertopmargin=10pt,
+    innerbottommargin=10pt
+}
+
+\mdfdefinestyle{redframe}{
+    backgroundcolor=lightpink,
+    leftline=true,
+    rightline=false,
+    topline=false,
+    bottomline=false,
+    linecolor=darkred,
+    linewidth=3pt,
+    innerleftmargin=10pt,
+    innerrightmargin=10pt,
+    innertopmargin=10pt,
+    innerbottommargin=10pt
+}
+
+\mdfdefinestyle{greenframe}{
+    backgroundcolor=lightgreen,
+    leftline=true,
+    rightline=false,
+    topline=false,
+    bottomline=false,
+    linecolor=darkgreen,
+    linewidth=3pt,
+    innerleftmargin=10pt,
+    innerrightmargin=10pt,
+    innertopmargin=10pt,
+    innerbottommargin=10pt
+}
+
+\newtheoremstyle{customdef}
+  {}{}{}{}{\cmsans}{}{ }{}
+\theoremstyle{customdef}
+\newmdtheoremenv[style=redframe]{definition}{Definition}
+\newmdtheoremenv[style=blueframe]{theorem}{Theorem}
+\newmdtheoremenv[style=greenframe]{algorithm}{Algorithm}
+\newtheorem{proofsection}{Justification}
+
+\DeclareFixedFont{\cmsans}{T1}{cmss}{bx}{n}{12pt}
+\DeclareFixedFont{\cmsanscap}{T1}{cmss}{bx}{n}{14pt}
+\titleformat{\title}{\cmsanscap}{\thestitle}{1em}{}
+\titleformat{\section}{\cmsans}{\thesection}{1em}{}
+\titleformat{\subsection}{\cmsans}{\thesubsection}{1em}{}
+\titleformat{\subsubsection}{\cmsans}{\thesubsubsection}{1em}{}
+\titleformat{\paragraph}{\cmsans}{\theparagraph}{1em}{}
+\titleformat{\subparagraph}{\cmsans}{\thesubparagraph}{1em}{}
+
+
+% Typographie
+\usepackage[auto]{microtype}
+\clubpenalty = 10000
+\widowpenalty = 10000
+\displaywidowpenalty = 10000
+
+
+\title{Reversibility of the Slice Sampler \\ with Stepping-Out and Shrinkage}
 \date{}
+\author{}
 
 \begin{document}
 
 \maketitle
 
-\section{Introduction}
+\begin{abstract}
+	\noindent
 This report provides a detailed summary of the reversibility of the Markov chain induced by the slice sampling algorithm when using the stepping-out and shrinkage procedures. The discussion clarifies a common point of confusion: the role of the auxiliary variable \( u \) and the symmetry argument that ensures the detailed balance condition holds. The initial, flawed argument based on the stepping-out interval being identical in the forward and reverse transitions is corrected, and a rigorous explanation is presented.
+\end{abstract}
+
+\section{Introduction}
 
 \section{The Slice Sampling Algorithm}
 The goal is to sample from a target distribution with density \( \pi(x) \propto f(x) \). The slice sampler introduces an auxiliary variable \( u \) to create a uniform distribution over the region under the density curve.
@@ -27,8 +105,8 @@ The goal is to sample from a target distribution with density \( \pi(x) \propto 
 \begin{definition}[Joint Distribution]
 The joint density of \( (x, u) \) is defined as:
 \[
-p(x, u) = 
-\begin{cases} 
+p(x, u) =
+\begin{cases}
 1 & \text{if } 0 \le u \le f(x), \\
 0 & \text{otherwise}.
 \end{cases}
@@ -47,7 +125,8 @@ Sampling directly from \( S(u) \) can be challenging. The stepping-out and shrin
 \section{Stepping-Out and Shrinkage Procedures}
 Given the current state \( x_0 \) and the auxiliary variable \( u \sim \text{Uniform}[0, f(x_0)] \), the goal is to sample a new state \( x_1 \) uniformly from \( S(u) \).
 
-\begin{enumerate}[label=\textbf{Step \arabic*.}]
+\begin{algorithm}
+\begin{enumerate}[label=\textbf{Step \arabic*.}, leftmargin=0pt, itemindent=*, align=left]
     \item \textbf{Stepping-Out:} An initial interval \( I_0 = [L, R] \) of width \( w \) is constructed around \( x_0 \). A standard method is to set \( L = x_0 - w \cdot \rho \) and \( R = L + w \), where \( \rho \sim \text{Uniform}(0,1) \). This interval is then expanded in steps of size \( w \) to the left and right until both ends are outside the slice, i.e., \( f(L) \le u \) and \( f(R) \le u \). This ensures \( S(u) \subseteq I_0 \).
     \item \textbf{Shrinkage:}
     \begin{enumerate}
@@ -62,6 +141,7 @@ Given the current state \( x_0 \) and the auxiliary variable \( u \sim \text{Uni
     \end{enumerate}
 \end{enumerate}
 A critical property of this shrinkage procedure is that the final accepted point \( x_1 \) is distributed uniformly over \( S(u) \), regardless of the initial interval \( I_0 \), provided \( I_0 \supseteq S(u) \). The starting point \( x_0 \) only influences the efficiency of the search, not the distribution of the outcome.
+\end{algorithm}
 
 \section{Markov Chain Transition Kernel and Reversibility}
 Let \( T(x_0 \to x_1) \) denote the transition probability density from \( x_0 \) to \( x_1 \) for the full slice sampler. This can be decomposed by conditioning on the auxiliary variable \( u \).
