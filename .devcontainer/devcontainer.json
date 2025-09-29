@@ -1,6 +1,6 @@
 {
-  "name": "MC-LAB Python Development",
-  "image": "mcr.microsoft.com/devcontainers/python:3.12-bookworm",
+  "name": "LaTeX Dev Container",
+  "image": "ubuntu:latest",
   "mounts": [
     "source=${localWorkspaceFolder}/notes,target=/workspace/notes,type=bind",
     "source=${localWorkspaceFolder}/problemSets,target=/workspace/problemSets,type=bind"
@@ -16,25 +16,15 @@
   "customizations": {
     "vscode": {
       "extensions": [
-        "ms-python.python",
-        "charliermarsh.ruff",
-        "ms-python.pylint",
-        "ms-jupyter.jupyter",
         "James-Yu.latex-workshop"
       ],
       "settings": {
-        "python.defaultInterpreterPath": "./.venv/bin/python",
-        "python.formatting.provider": "none",
-        "[python]": {
-          "editor.defaultFormatter": "charliermarsh.ruff",
-          "editor.formatOnSave": true,
-          "editor.codeActionsOnSave": {
-            "source.organizeImports": "explicit"
-          }
-        }
+        "latex-workshop.latex.outDir": "./out",
+        "latex-workshop.synctex.afterBuild.enabled": true,
+        "latex-workshop.view.pdf.viewer": "tab"
       }
     }
   },
-  "postCreateCommand": "sudo apt-get update && sudo apt-get install -y texlive-full && pip install uv && uv sync",
+  "postCreateCommand": "sudo apt-get update && sudo apt-get install -y texlive-full",
   "remoteUser": "vscode"
 }
