@@ -1,0 +1,237 @@
+\section*{Exercise 4}
+\begin{enumerate}
+\item Prove the Cauchy-Schwarz inequality which states that for any two real-valued random variables $Y$ and $Z$,
+\begin{equation*}
+|E [Y Z]|^2 \leq E\left[Y^2\right] E\left[Z^2\right].
+\end{equation*}
+(\emph{Hint: $(Y - \alpha Z)^2 \geq 0$ for any $\alpha \in \mathbb{R}$}).
+
+\item Using Cauchy-Schwarz inequality, show that when the marginal distributions of $Y$ and $Z$ are identical then
+\begin{equation*}
+\text{Cov} (Y, Z) \leq \text{Var} (Y).
+\end{equation*}
+
+\item Thinning of a Markov chain $\{X^{(t)}\}_{t\geq0}$ is the technique of retaining a subsequence of the sampled process for purposes of computing ergodic averages. For some $m \in \mathbb{N}$ we retain the ``subsampled'' chain $\{Y^{(t)}\}_{t\geq0}$ defined by
+\begin{equation*}
+Y^{(t)} := X^{(m \cdot t)}.
+\end{equation*}
+
+We might hope that $\{Y^{(t)}\}_{t\geq0}$ will exhibit lower autocorrelation than the original chain $\{X^{(t)}\}_{t\geq0}$ and thus will yield ergodic averages of lower variance.
+
+Consider a stationary Markov chain $\{X^{(t)}\}_{t\geq0}$. Let $T$ and $m$ be any two integers such that $T \geq m > 1$ and $T/m \in \mathbb{N}$. Show that
+\begin{equation*}
+\text{Var}\left[\frac{1}{T}\sum_{t=0}^{T-1}X^{(t)}\right] \leq \text{Var}\left[\frac{1}{T/m}\sum_{t=0}^{T/m-1}Y^{(t)}\right]
+\end{equation*}
+and briefly explain what this result tells us about the use of thinning.
+
+(\emph{Hint: start by writing $\sum_{t=0}^{T-1} X^{(t)} = \sum_{t=0}^{m-1}\sum_{s=0}^{T/m-1} X^{(s \cdot m+t)}$})
+\end{enumerate}
+
+\section*{Solution}
+
+\subsection*{Question 1: Proof of Cauchy-Schwarz Inequality}
+
+\begin{theorem}
+For any two real-valued random variables $Y$ and $Z$:
+\[
+|E[YZ]|^2 \leq E[Y^2]E[Z^2]
+\]
+\end{theorem}
+
+
+Following the hint, consider $(Y - \alpha Z)^2 \geq 0$ for any $\alpha \in \mathbb{R}$.
+
+Expanding:
+\[
+(Y - \alpha Z)^2 = Y^2 - 2\alpha YZ + \alpha^2 Z^2
+\]
+
+Taking expectation:
+\[
+E[(Y - \alpha Z)^2] = E[Y^2] - 2\alpha E[YZ] + \alpha^2 E[Z^2] \geq 0
+\]
+
+This is a quadratic function in $\alpha$ that is always non-negative. For a quadratic $a\alpha^2 + b\alpha + c \geq 0$ for all $\alpha$, the discriminant must satisfy $b^2 - 4ac \leq 0$.
+
+Here: $a = E[Z^2]$, $b = -2E[YZ]$, $c = E[Y^2]$
+
+Therefore:
+\begin{align*}
+(-2E[YZ])^2 - 4E[Z^2]E[Y^2] &\leq 0\\
+4(E[YZ])^2 - 4E[Z^2]E[Y^2] &\leq 0\\
+(E[YZ])^2 &\leq E[Z^2]E[Y^2]
+\end{align*}
+
+Taking the square root:
+\[
+|E[YZ]|^2 \leq E[Y^2]E[Z^2]
+\]
+
+
+\subsection*{Question 2: Covariance Inequality with Identical Marginals}
+
+\begin{theorem}
+When $Y$ and $Z$ have identical marginal distributions:
+\[
+\text{Cov}(Y,Z) \leq \text{Var}(Y)
+\]
+\end{theorem}
+
+
+When $Y$ and $Z$ have identical marginal distributions:
+\begin{itemize}
+\item $E[Y^2] = E[Z^2]$
+\item $E[Y] = E[Z]$
+\end{itemize}
+
+From the Cauchy-Schwarz inequality:
+\[
+|E[YZ]|^2 \leq E[Y^2]E[Z^2] = (E[Y^2])^2
+\]
+
+Therefore: $|E[YZ]| \leq E[Y^2]$, which implies $E[YZ] \leq E[Y^2]$.
+
+Now:
+\[
+\text{Cov}(Y,Z) = E[YZ] - E[Y]E[Z] = E[YZ] - (E[Y])^2
+\]
+
+We want to show:
+\[
+\text{Cov}(Y,Z) \leq \text{Var}(Y) = E[Y^2] - (E[Y])^2
+\]
+
+This is equivalent to showing:
+\[
+E[YZ] - (E[Y])^2 \leq E[Y^2] - (E[Y])^2
+\]
+
+Simplifying:
+\[
+E[YZ] \leq E[Y^2]
+\]
+
+This follows directly from our Cauchy-Schwarz result above. 
+
+
+\subsection*{Question 3: Thinning and Variance}
+
+
+
+
+
+\begin{theorem}
+For a stationary Markov chain $\{X^{(t)}\}_{t \geq 0}$ with thinned chain $Y^{(t)} := X^{(m \cdot t)}$, where $T \geq m > 1$ and $T/m \in \mathbb{N}$:
+\[
+\text{Var}\left[\frac{1}{T}\sum_{t=0}^{T-1} X^{(t)}\right] \leq \text{Var}\left[\frac{1}{T/m}\sum_{t=0}^{T/m-1} Y^{(t)}\right]
+\]
+\end{theorem}
+
+
+Let us define the total sum of the original chain:
+\[
+S_{\text{total}} = \sum_{t=0}^{T-1} X(t)
+\]
+Following the hint, we decompose this sum into $m$ subsampled sequences:
+\[
+S_{\text{total}} = \sum_{i=0}^{m-1} \sum_{s=0}^{T/m - 1} X(s \cdot m + i) = \sum_{i=0}^{m-1} S_i
+\]
+where $S_i = \sum_{s=0}^{T/m - 1} X(s \cdot m + i)$.
+The variance of the average of the original chain is:
+\[
+\text{Var}\left[\frac{1}{T}S_{\text{total}}\right] = \frac{1}{T^2} \text{Var}[S_{\text{total}}] = \frac{1}{T^2} \text{Var}\left[\sum_{i=0}^{m-1} S_i\right]
+\]
+Expanding the variance of the sum:
+\[
+\text{Var}\left[\sum_{i=0}^{m-1} S_i\right] = \sum_{i=0}^{m-1} \text{Var}[S_i] + 2\sum_{i=0}^{m-1} \sum_{j=i+1}^{m-1} \text{Cov}(S_i, S_j)
+\]
+Since the chain is stationary, all $S_i$ have the same variance. Let $V_s = \text{Var}[S_i]$ for all $i$. Then:
+\[
+\sum_{i=0}^{m-1} \text{Var}[S_i] = m V_s
+\]
+Now, we apply the result from Question 2: If two random variables have identical marginal distributions, then $\text{Cov}(Y, Z) \leq \text{Var}(Y)$. Due to stationarity, the marginal distributions of the components of $S_i$ and $S_j$ are identical, and this property extends to the sums $S_i$ and $S_j$. Therefore:
+\[
+\text{Cov}(S_i, S_j) \leq \text{Var}(S_i) = V_s \quad \text{for all } i \neq j
+\]
+There are $\binom{m}{2} = \frac{m(m-1)}{2}$ covariance pairs. Thus:
+\[
+2\sum_{i=0}^{m-1} \sum_{j=i+1}^{m-1} \text{Cov}(S_i, S_j) \leq 2 \cdot \frac{m(m-1)}{2} \cdot V_s = m(m-1) V_s
+\]
+Putting both parts together:
+\[
+\text{Var}[S_{\text{total}}] \leq m V_s + m(m-1) V_s = m^2 V_s
+\]
+Now, the thinned chain is defined as $Y(t) = X(m \cdot t)$. Notice that $S_0 = \sum_{t=0}^{T/m - 1} Y(t)$ is exactly the sum of the thinned chain. Therefore:
+\[
+\text{Var}[S_0] = V_s
+\]
+The variance of the average of the thinned chain is:
+\[
+\text{Var}\left[\frac{1}{T/m}\sum_{t=0}^{T/m - 1} Y(t)\right] = \frac{m^2}{T^2} \text{Var}[S_0] = \frac{m^2}{T^2} V_s
+\]
+Finally, comparing the two variances:
+\[
+\text{Var}\left[\frac{1}{T}S_{\text{total}}\right] = \frac{1}{T^2} \text{Var}[S_{\text{total}}] \leq \frac{1}{T^2} \cdot m^2 V_s = \text{Var}\left[\frac{1}{T/m}\sum_{t=0}^{T/m - 1} Y(t)\right]
+\]
+
+
+
+% Following the hint, we decompose:
+% \[
+% \sum_{t=0}^{T-1} X^{(t)} = \sum_{i=0}^{m-1} \sum_{s=0}^{T/m-1} X^{(s \cdot m + i)}
+% \]
+
+% Define $S_i = \sum_{s=0}^{T/m-1} X^{(s \cdot m + i)}$ for $i = 0, 1, \ldots, m-1$.
+
+% Then:
+% \[
+% \sum_{t=0}^{T-1} X^{(t)} = \sum_{i=0}^{m-1} S_i
+% \]
+
+% Note that:
+% \[
+% S_0 = \sum_{s=0}^{T/m-1} X^{(s \cdot m)} = \sum_{s=0}^{T/m-1} Y^{(s)}
+% \]
+
+% Therefore:
+% \[
+% \frac{1}{T}\sum_{t=0}^{T-1} X^{(t)} = \frac{1}{T}\sum_{i=0}^{m-1} S_i
+% \]
+
+% And:
+% \[
+% \frac{1}{T/m}\sum_{t=0}^{T/m-1} Y^{(t)} = \frac{1}{T/m} S_0
+% \]
+
+% Since the chain is stationary, each $S_i$ has the same marginal distribution. We have:
+% \[
+% \text{Var}\left[\frac{1}{T}\sum_{i=0}^{m-1} S_i\right] = \frac{1}{T^2}\text{Var}\left[\sum_{i=0}^{m-1} S_i\right]
+% \]
+
+% Using the fact that for identically distributed random variables with covariance structure typical of stationary processes:
+% \[
+% \text{Var}\left[\sum_{i=0}^{m-1} S_i\right] \leq m \cdot \text{Var}[S_0]
+% \]
+
+% Therefore:
+% \begin{align*}
+% \text{Var}\left[\frac{1}{T}\sum_{t=0}^{T-1} X^{(t)}\right] &= \frac{1}{T^2}\text{Var}\left[\sum_{i=0}^{m-1} S_i\right]\\
+% &\leq \frac{m}{T^2}\text{Var}[S_0]\\
+% &= \frac{1}{(T/m)^2}\text{Var}[S_0]\\
+% &= \text{Var}\left[\frac{1}{T/m}S_0\right]\\
+% &= \text{Var}\left[\frac{1}{T/m}\sum_{t=0}^{T/m-1} Y^{(t)}\right]
+% \end{align*}
+
+
+
+\subsection{Interpretation}
+
+This result shows that \textbf{thinning actually increases variance}, contrary to intuition. The full chain average has lower variance than the thinned chain average. This happens because:
+
+\begin{enumerate}
+\item Thinning discards information that could help reduce variance
+\item The averaging effect over the full chain provides more variance reduction than the potential decorrelation benefit from thinning  
+\item In practice, thinning is often used for computational convenience rather than variance reduction
+\end{enumerate}
+
+The key insight is that while thinning may reduce autocorrelation, it also reduces the effective sample size, and the latter effect dominates in terms of variance.

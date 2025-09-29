@@ -1,0 +1,121 @@
+\section*{Exercise 2}
+For $i = 1, \ldots, T$ consider $Z_i = X_i + Y_i$ with independent $X_i, Y_i$ such that
+\begin{equation}
+X_i \sim \text{Binomial}(m_i, \theta_1), \quad Y_i \sim \text{Binomial}(n_i, \theta_2).
+\end{equation}
+
+\begin{enumerate}
+\item We assume $0 \leq z_i \leq m_i + n_i$ for $i = 1, \ldots, T$. We observe $z_i$ for $i = 1, \ldots, T$ and the $n_i, m_i$, for $i = 1, \ldots, T$ are given. Give the expression of the likelihood function $p (z_1, \ldots, z_T | \theta_1, \theta_2)$.
+
+\item Assume we set independent uniform priors $\theta_1 \sim U[0,1]$, $\theta_2 \sim U[0,1]$. Propose a Gibbs sampler to sample from $p (\theta_1, \theta_2| z_1, \ldots, z_T)$. Recall that the Beta distribution of parameter $\alpha, \beta > 0$ admits a density $f (x) \propto x^{\alpha-1}(1 - x)^{\beta-1}I_{[0,1]} (x)$.
+
+(\emph{Hint: introduce auxiliary variables})
+\end{enumerate}
+
+
+\section*{Solution}
+
+Given: For $i = 1, \ldots, T$, consider $Z_i = X_i + Y_i$ with independent $X_i, Y_i$ such that:
+\begin{align}
+X_i &\sim \text{Binomial}(m_i, \theta_1)\\
+Y_i &\sim \text{Binomial}(n_i, \theta_2)
+\end{align}
+
+\subsection*{Part 1: Likelihood Function}
+
+We observe $z_i$ for $i = 1, \ldots, T$ but not the individual $X_i$ and $Y_i$ values. We need to find $p(z_1, \ldots, z_T | \theta_1, \theta_2)$.
+
+For each $i$, the probability mass function of $Z_i = X_i + Y_i$ is obtained by summing over all possible ways to achieve the observed sum $z_i$:
+
+\begin{equation}
+P(Z_i = z_i) = \sum_{k} P(X_i = k) \cdot P(Y_i = z_i - k)
+\end{equation}
+
+The summation limits are determined by the constraints:
+\begin{itemize}
+\item $0 \leq k \leq m_i$ (since $X_i$ cannot exceed $m_i$)
+\item $0 \leq z_i - k \leq n_i$ (since $Y_i$ cannot exceed $n_i$)
+\end{itemize}
+
+This gives us $k \in \{\max(0, z_i - n_i), \ldots, \min(z_i, m_i)\}$.
+
+Therefore:
+\begin{align}
+P(Z_i = z_i) &= \sum_{k=\max(0,z_i-n_i)}^{\min(z_i,m_i)} \binom{m_i}{k} \theta_1^k (1-\theta_1)^{m_i-k} \binom{n_i}{z_i-k} \theta_2^{z_i-k} (1-\theta_2)^{n_i-(z_i-k)}
+\end{align}
+
+The likelihood function is:
+\begin{equation}
+\boxed{p(z_1, \ldots, z_T | \theta_1, \theta_2) = \prod_{i=1}^T P(Z_i = z_i)}
+\end{equation}
+
+where each $P(Z_i = z_i)$ is given by the formula above.
+
+\subsection*{Part 2: Gibbs Sampler with Auxiliary Variables}
+
+Following the hint, we introduce the unobserved values $X_i$ for $i = 1, \ldots, T$ as auxiliary variables. If we knew the $X_i$ values, then $Y_i = Z_i - X_i$ would be determined.
+
+\textbf{Complete Data Likelihood:}
+\begin{align}
+&p(z_1, \ldots, z_T, x_1, \ldots, x_T | \theta_1, \theta_2)\\
+&= \prod_{i=1}^T P(X_i = x_i | \theta_1) \cdot P(Y_i = z_i - x_i | \theta_2)\\
+&= \prod_{i=1}^T \binom{m_i}{x_i} \theta_1^{x_i} (1-\theta_1)^{m_i-x_i} \binom{n_i}{z_i-x_i} \theta_2^{z_i-x_i} (1-\theta_2)^{n_i-(z_i-x_i)}
+\end{align}
+
+\textbf{Posterior Distribution:}
+With uniform priors $\theta_1 \sim U[0,1]$ and $\theta_2 \sim U[0,1]$:
+\begin{align}
+&p(\theta_1, \theta_2, x_1, \ldots, x_T | z_1, \ldots, z_T)\\
+&\propto \theta_1^{\sum_{i=1}^T x_i} (1-\theta_1)^{\sum_{i=1}^T (m_i-x_i)} \theta_2^{\sum_{i=1}^T (z_i-x_i)} (1-\theta_2)^{\sum_{i=1}^T (n_i-(z_i-x_i))}
+\end{align}
+
+\textbf{Full Conditional Distributions:}
+
+\textbf{1. For $\theta_1$:}
+\begin{equation}
+\theta_1 | \theta_2, x_1, \ldots, x_T, z_1, \ldots, z_T \sim \text{Beta}\left(1 + \sum_{i=1}^T x_i, 1 + \sum_{i=1}^T m_i - \sum_{i=1}^T x_i\right)
+\end{equation}
+
+\textbf{2. For $\theta_2$:}
+\begin{equation}
+\theta_2 | \theta_1, x_1, \ldots, x_T, z_1, \ldots, z_T \sim \text{Beta}\left(1 + \sum_{i=1}^T (z_i - x_i), 1 + \sum_{i=1}^T n_i - \sum_{i=1}^T (z_i - x_i)\right)
+\end{equation}
+
+\textbf{3. For each $X_i$:}
+\begin{align}
+P(X_i = k | \theta_1, \theta_2, z_i) &\propto \binom{m_i}{k} \theta_1^k (1-\theta_1)^{m_i-k} \binom{n_i}{z_i-k} \theta_2^{z_i-k} (1-\theta_2)^{n_i-(z_i-k)}
+\end{align}
+for $k \in \{\max(0, z_i - n_i), \ldots, \min(z_i, m_i)\}$.
+
+\textbf{Gibbs Sampling Algorithm:}
+
+\begin{enumerate}
+\item \textbf{Initialize:} Choose starting values $\theta_1^{(0)}, \theta_2^{(0)}, x_1^{(0)}, \ldots, x_T^{(0)}$
+
+\item \textbf{For} $t = 1, 2, 3, \ldots$:
+
+\begin{enumerate}
+\item \textbf{Update auxiliary variables:} For each $i = 1, \ldots, T$, sample
+\begin{equation}
+X_i^{(t)} \sim P(X_i = \cdot | \theta_1^{(t-1)}, \theta_2^{(t-1)}, z_i)
+\end{equation}
+where the probability mass function is given above.
+
+\item \textbf{Update $\theta_1$:} Sample
+\begin{equation}
+\theta_1^{(t)} \sim \text{Beta}\left(1 + \sum_{i=1}^T x_i^{(t)}, 1 + \sum_{i=1}^T m_i - \sum_{i=1}^T x_i^{(t)}\right)
+\end{equation}
+
+\item \textbf{Update $\theta_2$:} Sample
+\begin{equation}
+\theta_2^{(t)} \sim \text{Beta}\left(1 + \sum_{i=1}^T (z_i - x_i^{(t)}), 1 + \sum_{i=1}^T n_i - \sum_{i=1}^T (z_i - x_i^{(t)})\right)
+\end{equation}
+\end{enumerate}
+\end{enumerate}
+
+\boxed{
+\begin{minipage}{0.9\textwidth}
+\textbf{Summary:} The key insight is to introduce the unobserved $X_i$ values as auxiliary variables, which makes the conditional distributions conjugate and easy to sample from. The Gibbs sampler alternates between sampling the auxiliary variables from discrete distributions and sampling the parameters from Beta distributions.
+\end{minipage}
+}
+

@@ -1,0 +1,79 @@
+\section*{Exercise 6}
+On a product space $\mathcal{X} = \mathcal{X}_1 \times \mathcal{X}_2$, consider a target distribution of density $\pi (x_1, x_2)$. To sample from $\pi$, the Gibbs sampler iterately samples from $\pi_{X_1|X_2}(x_1| x_2)$ and $\pi_{X_2|X_1}(x_2| x_1)$. We consider here a scenario where it is possible to sample from $\pi_{X_2|X_1}(x_2| x_1)$ but impossible to sample from $\pi_{X_1|X_2}(x_1| x_2)$. Then the following algorithm may be useful. Note that this is nothing but a standard Metropolis--Hastings algorithm with a cycle of kernels, each updating only one component of the state; but it is commonly referred to as Metropolis-within-Gibbs (MWG).
+
+We introduce a proposal $q (x_1'| x_1, x_2)$ on $\mathcal{X}_1$; i.e. $q (x_1'| x_1, x_2) \geq 0$ and $\int_{\mathcal{X}_1} q (x_1'| x_1, x_2) dx_1' = 1$ for any $(x_1, x_2) \in \mathcal{X}$.
+
+Starting with $X^{(1)} := \left(X_1^{(1)}, X_2^{(1)}\right)$, iterate for $t = 2, 3, \ldots$
+\begin{itemize}
+\item Sample $\tilde{X}_1 \sim q\left(\cdot| X_1^{(t-1)}, X_2^{(t-1)}\right)$.
+\item Compute $\alpha\left(\tilde{X}_1| X_1^{(t-1)}, X_2^{(t-1)}\right) = \min\left\{1,\frac{\pi\left(\tilde{X}_1,X_2^{(t-1)}\right)q\left(X_1^{(t-1)}|\tilde{X}_1,X_2^{(t-1)}\right)}{\pi\left(X_1^{(t-1)},X_2^{(t-1)}\right)q\left(\tilde{X}_1|X_1^{(t-1)},X_2^{(t-1)}\right)}\right\}$.
+\item With probability $\alpha\left(\tilde{X}_1| X_1^{(t-1)}, X_2^{(t-1)}\right)$, set $X_1^{(t)} = \tilde{X}_1$, otherwise set $X_1^{(t)} = X_1^{(t-1)}$.
+\item Sample $X_2^{(t)} \sim \pi_{X_2|X_1}\left(\cdot| X_1^{(t)}\right)$.
+\end{itemize}
+
+\begin{enumerate}
+\item Show that when $q (x_1'| x_1, x_2) = \pi_{X_1|X_2}(x_1'| x_2)$ then the MWG corresponds to the systematic scan Gibbs sampler.
+\item State the transition kernel corresponding to this algorithm and show that it has invariant distribution $\pi$.
+\end{enumerate}
+
+\subsection*{Question 1: MWG reduces to systematic scan Gibbs sampler}
+
+When $q(x'_1|x_1, x_2) = \pi_{X_1|X_2}(x'_1|x_2)$, the acceptance probability becomes:
+
+\begin{align*}
+\alpha(X_1|X_1^{(t-1)}, X_2^{(t-1)}) &= \min\left\{1, \frac{\pi(X_1, X_2^{(t-1)})q(X_1^{(t-1)}|X_1, X_2^{(t-1)})}{\pi(X_1^{(t-1)}, X_2^{(t-1)})q(X_1|X_1^{(t-1)}, X_2^{(t-1)})}\right\}
+\end{align*}
+
+Substituting $q(x'_1|x_1, x_2) = \pi_{X_1|X_2}(x'_1|x_2)$:
+
+\begin{align*}
+\alpha(X_1|X_1^{(t-1)}, X_2^{(t-1)}) &= \min\left\{1, \frac{\pi(X_1, X_2^{(t-1)})\pi_{X_1|X_2}(X_1^{(t-1)}|X_2^{(t-1)})}{\pi(X_1^{(t-1)}, X_2^{(t-1)})\pi_{X_1|X_2}(X_1|X_2^{(t-1)})}\right\}
+\end{align*}
+
+Using $\pi(x_1, x_2) = \pi_{X_1|X_2}(x_1|x_2)\pi_{X_2}(x_2)$:
+
+\begin{align*}
+&= \min\left\{1, \frac{\pi_{X_1|X_2}(X_1|X_2^{(t-1)})\pi_{X_2}(X_2^{(t-1)})\pi_{X_1|X_2}(X_1^{(t-1)}|X_2^{(t-1)})}{\pi_{X_1|X_2}(X_1^{(t-1)}|X_2^{(t-1)})\pi_{X_2}(X_2^{(t-1)})\pi_{X_1|X_2}(X_1|X_2^{(t-1)})}\right\}\\
+&= \min\{1, 1\} = 1
+\end{align*}
+
+Since the acceptance probability is always 1, every proposed move is accepted. This means:
+\begin{itemize}
+\item $X_1^{(t)}$ is always sampled from $\pi_{X_1|X_2}(\cdot|X_2^{(t-1)})$
+\item $X_2^{(t)}$ is sampled from $\pi_{X_2|X_1}(\cdot|X_1^{(t)})$
+\end{itemize}
+
+This is exactly the systematic scan Gibbs sampler! $\square$
+
+\subsection*{Question 2: Transition kernel and invariant distribution}
+
+The transition kernel $K((x_1, x_2), (x'_1, x'_2))$ can be written as:
+
+\begin{align*}
+K((x_1, x_2), (x'_1, x'_2)) = K_{MH}((x_1, x_2), (x'_1, x_2)) \cdot \pi_{X_2|X_1}(x'_2|x'_1)
+\end{align*}
+
+where $K_{MH}$ is the standard Metropolis-Hastings kernel:
+\begin{align*}
+K_{MH}((x_1, x_2), (x'_1, x_2)) &= q(x'_1|x_1, x_2)\alpha(x'_1|x_1, x_2)\\
+&\quad + \delta_{x_1}(x'_1)\left(1 - \int_{X_1} q(u_1|x_1, x_2)\alpha(u_1|x_1, x_2)du_1\right)
+\end{align*}
+
+\textbf{Proof that $\pi$ is invariant:}
+
+The MWG algorithm consists of two sequential steps:
+\begin{enumerate}
+\item Metropolis-Hastings update for $X_1$ (keeping $X_2$ fixed)  
+\item Gibbs update for $X_2$ (given the new $X_1$)
+\end{enumerate}
+
+\textbf{Step 1 preserves $\pi$:} 
+For any fixed value $x_2$, the MH algorithm with proposal $q(\cdot|x_1, x_2)$ and the given acceptance probability is designed to have stationary distribution $\pi_{X_1|X_2}(\cdot|x_2)$. 
+
+Since we start with $X_1^{(t-1)}|X_2^{(t-1)} \sim \pi_{X_1|X_2}(\cdot|X_2^{(t-1)})$, after the MH step we still have $X_1^*|X_2^{(t-1)} \sim \pi_{X_1|X_2}(\cdot|X_2^{(t-1)})$. Therefore $(X_1^*, X_2^{(t-1)}) \sim \pi$.
+
+\textbf{Step 2 preserves $\pi$:} 
+Starting with $(X_1^*, X_2^{(t-1)}) \sim \pi$, we sample $X_2^{(t)} \sim \pi_{X_2|X_1}(\cdot|X_1^*)$. By the definition of conditional distributions, this gives $(X_1^*, X_2^{(t)}) \sim \pi$.
+
+Therefore, starting with a sample from $\pi$ and applying one iteration of MWG gives another sample from $\pi$, proving that $\pi$ is the invariant distribution. $\square$
+

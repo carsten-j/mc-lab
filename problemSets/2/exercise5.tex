@@ -1,0 +1,34 @@
+
+\section*{Exercise 5}
+\begin{enumerate}
+\item Prove or disprove (by finding the invariant distribution) that $\pi$ is the invariant distribution of the following variants of Gibbs sampling.
+
+\begin{itemize}
+\item[(a)] ``Block'' Gibbs sampler:
+\begin{enumerate}
+\item Sample $X_1^{(t)} \sim \pi_{X_1|X_3}\left(\cdot| X_3^{(t-1)}\right)$.
+\item Sample $X_2^{(t)} \sim \pi_{X_2|X_1,X_3}\left(\cdot| X_1^{(t)}, X_3^{(t-1)}\right)$.
+\item Sample $X_3^{(t)} \sim \pi_{X_3|X_1,X_2}\left(\cdot| X_1^{(t)}, X_2^{(t)}\right)$.
+\end{enumerate}
+
+\item[(b)] ``out-of-order'' Gibbs sampler:
+\begin{enumerate}
+\item Sample $X_2^{(t)} \sim \pi_{X_2|X_1,X_3}\left(\cdot| X_1^{(t-1)}, X_3^{(t-1)}\right)$.
+\item Sample $X_3^{(t)} \sim \pi_{X_3|X_1,X_2}\left(\cdot| X_1^{(t-1)}, X_2^{(t)}\right)$.
+\item Sample $X_1^{(t)} \sim \pi_{X_1|X_3}\left(\cdot| X_3^{(t)}\right)$.
+\end{enumerate}
+\end{itemize}
+
+\item Modern computer hardware has been trending towards more parallel architectures. Unfortunately, the traditional (deterministic-scan) Gibbs sampling is an inherently sequential algorithm which parallelizes poorly. Asynchronous Gibbs sampler is a variant of Gibbs sampling. Let $\{X_1^{(1)}, \ldots, X_d^{(1)}\}$ be the initial state then iterate for $t = 2, 3, \ldots$, the asynchronous Gibbs sampler updates $X^{(t-1)}$ to $X^{(t)}$ by the following $d$ steps which can be parallelized:
+\begin{enumerate}
+\item Sample $X_1^{(t)} \sim \pi_{X_1|X_{-1}}\left(\cdot| X_2^{(t-1)}, \ldots, X_d^{(t-1)}\right)$.
+\item[$\vdots$]
+\item[$j$.] Sample $X_j^{(t)} \sim \pi_{X_j|X_{-j}}\left(\cdot| X_1^{(t-1)}, \ldots, X_{j-1}^{(t-1)}, X_{j+1}^{(t-1)}, \ldots, X_d^{(t-1)}\right)$.
+\item[$\vdots$]
+\item[$d$.] Sample $X_d^{(t)} \sim \pi_{X_d|X_{-d}}\left(\cdot| X_1^{(t-1)}, \ldots, X_{d-1}^{(t-1)}\right)$.
+\end{enumerate}
+
+\begin{itemize}
+\item[(a)] Prove or disprove (by constructing a counterexample) that the asynchronous Gibbs sampler has $\pi$ as the invariant distribution. (\emph{Hint: consider discrete state space $\{0, 1\} \times \{0, 1\}$.})
+\end{itemize}
+\end{enumerate}

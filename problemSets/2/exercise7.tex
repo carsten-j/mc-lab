@@ -1,0 +1,162 @@
+
+\section*{Exercise 7}
+Let $\mathcal{X}$ be a finite state-space. We consider the following Markov transition kernel
+\begin{equation*}
+T (x, y) = \alpha (x, y) q (x, y) + \left(1 - \sum_{z\in\mathcal{X}} \alpha (x, z) q (x, z)\right) \delta_x (y)
+\end{equation*}
+where $q (x, y) \geq 0$, $\sum_{y\in\mathcal{X}} q (x, y) = 1$ and $0 \leq \alpha (x, y) \leq 1$ for any $x, y \in \mathcal{X}$. $\delta_x (y)$ is the Kronecker symbol; i.e. $\delta_x (y) = 1$ if $y = x$ and zero otherwise.
+
+\begin{enumerate}
+\item Let $\pi$ be a probability mass function on $\mathcal{X}$. Show that if
+\begin{equation*}
+\alpha (x, y) = \frac{\gamma (x, y)}{\pi (x) q (x, y)}
+\end{equation*}
+where $\gamma (x, y) = \gamma (y, x)$ and $\gamma (x, y)$ is chosen such that $0 \leq \alpha (x, y) \leq 1$ for any $x, y \in \mathcal{X}$ then $T$ is $\pi$-reversible.
+
+\item Verify that the Metropolis-Hastings algorithm corresponds to $\gamma (x, y) = \min \{\pi (x) q (x, y), \pi (y) q (y, x)\}$. The Baker algorithm is an alternative corresponding to
+\begin{equation*}
+\gamma (x, y) = \frac{\pi (x) q (x, y) \pi (y) q (y, x)}{\pi (x) q (x, y) + \pi (y) q (y, x)}.
+\end{equation*}
+Give the associated acceptance probability $\alpha (x, y)$ for the Baker algorithm.
+
+\item Peskun's theorem (1973) is a very important result in the MCMC literature which states the following.
+
+\textbf{Theorem:} Let $T_1$ and $T_2$ be two reversible, aperiodic and irreducible Markov transition kernels w.r.t $\pi$. If
+\begin{equation*}
+T_1 (x, y) \geq T_2 (x, y) , \text{ for all } x \neq y \in \mathcal{X}
+\end{equation*}
+then, for all functions $\phi : \mathcal{X} \to \mathbb{R}$, the asymptotic variance of MCMC estimators $\hat{I}_n (\phi) = \frac{1}{n}\sum_{t=0}^{n-1} \phi\left(X^{(t)}\right)$ of $I (\phi) = E_\pi [\phi (X)]$ is smaller for $T_1$ than $T_2$.
+
+Assume that you are in a scenario where both Metropolis-Hastings and Baker algorithms yield aperiodic and irreducible Markov chains. Which algorithm provides estimators of $I (\phi)$ with the lowest asymptotic variance?
+
+\item Suppose that $X = (X_1, \ldots, X_d)$ where $X_i$ takes $m \geq 2$ possible values and $\pi (x) = \pi (x_1, \ldots, x_d)$ is the distribution of interest. The random scan Gibbs sampler proceeds as follows.
+
+\textbf{Random scan Gibbs sampler.} Let $\{X_1^{(1)}, \ldots, X_d^{(1)}\}$ be the initial state then iterate for $t = 2, 3, \ldots$
+\begin{itemize}
+\item Sample an index $K$ uniformly on $\{1, \ldots, d\}$.
+\item Set $X_i^{(t)} := X_i^{(t-1)}$ for $i \neq K$ and sample $X_K^{(t)} \sim \pi_{X_K|X_{-K}}\left(\cdot| X_1^{(t)}, \ldots, X_{K-1}^{(t)}, X_{K+1}^{(t)}, \ldots, X_d^{(t)}\right)$.
+\end{itemize}
+
+Consider now a modified random scan Gibbs sampler where instead of sampling $X_K^{(t)}$ from its conditional distribution, we use the following proposal
+\begin{equation*}
+q (X_K = x_K^*| x_{-K}, x_K) = \begin{cases}
+\frac{\pi_{X_K|X_{-K}} (x_K^*|x_{-K})}{1-\pi_{X_K|X_{-K}} (x_K|x_{-K})} & \text{for } x_K^* \neq x_K \\
+0 & \text{otherwise}
+\end{cases}
+\end{equation*}
+where $x_{-K} := (x_1, \ldots, x_{K-1}, x_{K+1}, \ldots, x_d)$ which is accepted with probability
+\begin{equation*}
+\alpha (x_{-K}, x_K, x_K^*) = \min\left\{1,\frac{1 - \pi_{X_K|X_{-K}} (x_K| x_{-K})}{1 - \pi_{X_K|X_{-K}} (x_K^*| x_{-K})}\right\}.
+\end{equation*}
+
+\textbf{Modified random scan Gibbs sampler.} Let $\{X_1^{(0)}, \ldots, X_d^{(0)}\}$ be the initial state then iterate for $t = 2, 3, \ldots$
+\begin{itemize}
+\item Sample an index $K$ uniformly on $\{1, \ldots, d\}$.
+\item Set $X_i^{(t)} := X_i^{(t-1)}$ for $i \neq K$.
+\item Sample $\tilde{X}_K$ such that $P (\tilde{X}_K = x_K^*) = q\left(\tilde{X}_K^* = x_K^*| X_{-K}^{(t)}, X_K^{(t-1)}\right)$.
+\item With probability $\alpha\left(X_{-K}^{(t)}, X_K^{(t-1)}, \tilde{X}_K\right)$, set $X_K^{(t)} = \tilde{X}_K^*$ and $X_K^{(t)} = X_K^{(t-1)}$ otherwise.
+\end{itemize}
+
+Assume that both algorithms provide an irreducible and aperiodic Markov chain. Check that both transition kernels are $\pi$-reversible and use Peskun's theorem to show that the modified random scan Gibbs sampler provides estimators of $I (\phi)$ with a lower asymptotic variance than the standard random scan Gibbs sampler.
+\end{enumerate}
+
+\subsection*{Question 1: Show T is $\pi$-reversible}
+
+We need to show that $\pi(x)T(x,y) = \pi(y)T(y,x)$ for all $x,y \in X$.
+
+Given:
+\begin{itemize}
+\item $\alpha(x,y) = \frac{\gamma(x,y)}{\pi(x)q(x,y)}$
+\item $\gamma(x,y) = \gamma(y,x)$ (symmetry condition)
+\item $0 \leq \alpha(x,y) \leq 1$
+\end{itemize}
+
+The transition kernel is:
+\begin{align*}
+T(x,y) = \alpha(x,y)q(x,y) + \left(1 - \sum_{z \in X} \alpha(x,z)q(x,z)\right)\delta_x(y)
+\end{align*}
+
+\textbf{Case 1: $x \neq y$}
+
+In this case, $\delta_x(y) = 0$, so:
+\begin{align*}
+T(x,y) &= \alpha(x,y)q(x,y) = \frac{\gamma(x,y)}{\pi(x)q(x,y)} \cdot q(x,y) = \frac{\gamma(x,y)}{\pi(x)}
+\end{align*}
+
+Similarly:
+\begin{align*}
+T(y,x) &= \alpha(y,x)q(y,x) = \frac{\gamma(y,x)}{\pi(y)q(y,x)} \cdot q(y,x) = \frac{\gamma(y,x)}{\pi(y)}
+\end{align*}
+
+Now checking detailed balance:
+\begin{align*}
+\pi(x)T(x,y) &= \pi(x) \cdot \frac{\gamma(x,y)}{\pi(x)} = \gamma(x,y)\\
+\pi(y)T(y,x) &= \pi(y) \cdot \frac{\gamma(y,x)}{\pi(y)} = \gamma(y,x)
+\end{align*}
+
+Since $\gamma(x,y) = \gamma(y,x)$, we have:
+\begin{align*}
+\pi(x)T(x,y) = \pi(y)T(y,x)
+\end{align*}
+
+\textbf{Case 2: $x = y$}
+
+For $x = y$, the detailed balance condition $\pi(x)T(x,x) = \pi(x)T(x,x)$ is trivially satisfied.
+
+Therefore, T is $\pi$-reversible. $\square$
+
+\subsection*{Question 2: Verify Metropolis-Hastings and find Baker acceptance probability}
+
+\subsubsection*{Part (a): Metropolis-Hastings}
+
+For Metropolis-Hastings, we have:
+\begin{align*}
+\gamma(x,y) = \min\{\pi(x)q(x,y), \pi(y)q(y,x)\}
+\end{align*}
+
+The acceptance probability is:
+\begin{align*}
+\alpha(x,y) = \frac{\gamma(x,y)}{\pi(x)q(x,y)} = \frac{\min\{\pi(x)q(x,y), \pi(y)q(y,x)\}}{\pi(x)q(x,y)}
+\end{align*}
+
+\textbf{Case 1:} If $\pi(x)q(x,y) \leq \pi(y)q(y,x)$, then:
+\begin{align*}
+\alpha(x,y) = \frac{\pi(x)q(x,y)}{\pi(x)q(x,y)} = 1
+\end{align*}
+
+\textbf{Case 2:} If $\pi(x)q(x,y) > \pi(y)q(y,x)$, then:
+\begin{align*}
+\alpha(x,y) = \frac{\pi(y)q(y,x)}{\pi(x)q(x,y)}
+\end{align*}
+
+Combining both cases:
+\begin{align*}
+\alpha(x,y) = \min\left\{1, \frac{\pi(y)q(y,x)}{\pi(x)q(x,y)}\right\}
+\end{align*}
+
+This is exactly the standard Metropolis-Hastings acceptance probability! $\checkmark$
+
+\subsubsection*{Part (b): Baker algorithm}
+
+For the Baker algorithm:
+\begin{align*}
+\gamma(x,y) = \frac{\pi(x)q(x,y)\pi(y)q(y,x)}{\pi(x)q(x,y) + \pi(y)q(y,x)}
+\end{align*}
+
+The acceptance probability is:
+\begin{align*}
+\alpha(x,y) &= \frac{\gamma(x,y)}{\pi(x)q(x,y)}\\
+&= \frac{\pi(x)q(x,y)\pi(y)q(y,x)}{\pi(x)q(x,y)[\pi(x)q(x,y) + \pi(y)q(y,x)]}\\
+&= \frac{\pi(y)q(y,x)}{\pi(x)q(x,y) + \pi(y)q(y,x)}
+\end{align*}
+
+\textbf{Verification of symmetry:}
+\begin{align*}
+\gamma(y,x) &= \frac{\pi(y)q(y,x)\pi(x)q(x,y)}{\pi(y)q(y,x) + \pi(x)q(x,y)}\\
+&= \frac{\pi(x)q(x,y)\pi(y)q(y,x)}{\pi(x)q(x,y) + \pi(y)q(y,x)} = \gamma(x,y)
+\end{align*}
+
+Therefore, the Baker algorithm acceptance probability is:
+\begin{align*}
+\alpha(x,y) = \frac{\pi(y)q(y,x)}{\pi(x)q(x,y) + \pi(y)q(y,x)}
+\end{align*}
