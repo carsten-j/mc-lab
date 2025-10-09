@@ -3,36 +3,6 @@ https://bjlkeng.io/posts/probability-the-logic-of-science/
 Om E.T. Jaynes bog
 
 
-Studieplan
-
-Mandag
-Gibbs sampler
-Opgave 3 og 4
-
-Tirsdag
-N.A.
-
-Onsdag
-Markov Chain
-Gibbs 
-Opgave 5
-
-
-
-## Thinning
-https://besjournals.onlinelibrary.wiley.com/doi/pdf/10.1111/j.2041-210X.2011.00131.x#:~:text=3.,MCMC%20appeared%20in%20ecological%20publications.
-https://mc-stan.org/docs/reference-manual/analysis.html#effective-sample-size.section
-https://discourse.julialang.org/t/thinning-mcmc-posteriors-to-reduce-autocorrelation/85254/3
-
-
-## Pseudo-marginal MCMC
-https://lips.cs.princeton.edu/pseudo-marginal-mcmc/
-https://darrenjw.wordpress.com/2010/09/20/the-pseudo-marginal-approach-to-exact-approximate-mcmc-algorithms/
-
-
-Gibbs sampling
-Opgaver - problem set 1
-
 
 Why does accept-reject work, se bog ved seng derhjemme
 https://academic.uprm.edu/wrolke/esma5015/fund.html
@@ -57,22 +27,25 @@ Og relation til Arviz
 Se også Mackey bog for IS 
 
 
+## Markov chains
 
+* https://mpaldridge.github.io/math2750/S10-stationary-distributions.html
+  
+## Thinning
 
+* https://besjournals.onlinelibrary.wiley.com/doi/pdf/10.1111/j.2041-210X.2011.00131.x#:~:text=3.,MCMC%20appeared%20in%20ecological%20publications.
+* https://mc-stan.org/docs/reference-manual/analysis.html#effective-sample-size.section
+* https://discourse.julialang.org/t/thinning-mcmc-posteriors-to-reduce-autocorrelation/85254/3
 
+## Pseudo-marginal MCMC
 
+* https://lips.cs.princeton.edu/pseudo-marginal-mcmc/
+* https://darrenjw.wordpress.com/2010/09/20/the-pseudo-marginal-approach-to-exact-approximate-mcmc-algorithms/
 
-
+## Rejection sampling
 
 https://cswr.nrhstat.org/reject-samp#adaptive
 Accept-reject - piecewise log-concave densities
-Importance sampling - confidence band
-
-https://joss.theoj.org/papers/10.21105/joss.06906
-Alternative sampling strategy
-
-https://github.com/ColCarroll/minimc?tab=readme-ov-file
-Small HMC implementation 
 
 https://amyanchen.github.io/files/Adaptive_Rejection_Sampling
 Adaptive Squeezed Rejection Sampling
@@ -80,23 +53,22 @@ Adaptive Squeezed Rejection Sampling
 https://longhaisk.github.io/software/ars/ars.html
 Adaptive rejection sampling - ARS
 
+Importance sampling - confidence band
 
-**MCMC**
+https://joss.theoj.org/papers/10.21105/joss.06906
+Alternative sampling strategy
 
 https://emcee.readthedocs.io/en/stable/
 Jonathan Goodman
 
+## Gibbs sampling
 
+* https://arxiv.org/pdf/2403.18054
+* https://xuwd11.github.io/am207/wiki/introgibbs.html
+* https://xuwd11.github.io/am207/wiki/tetchygibbs.htm
+* https://xuwd11.github.io/am207/wiki/gibbsfromMH.html
 
-https://arxiv.org/pdf/2403.18054
-https://xuwd11.github.io/am207/wiki/introgibbs.html
-https://xuwd11.github.io/am207/wiki/tetchygibbs.html
-Gibbs sampling
-
-
-https://xuwd11.github.io/am207/wiki/gibbsfromMH.html
-Gibbs from Metroplis-Hastings
-
+## Metropolis-Hastings
 
 https://ermongroup.github.io/cs323-notes/probabilistic/mh/
 Metropolis-Hastings og noget om hvorfor den konvergeres til den ønskede fordeling
@@ -113,21 +85,36 @@ https://arxiv.org/pdf/1710.06068#page3
 
 https://bjlkeng.io/posts/markov-chain-monte-carlo-mcmc-and-the-metropolis-hastings-algorithm/
 
-HMC
+## HMC
 
-https://bjlkeng.io/posts/hamiltonian-monte-carlo/
-Og se implementation her
-https://github.com/bjlkeng/sandbox/blob/master/hmc/hmc.ipynb
-https://blogs.rstudio.com/ai/posts/2019-10-03-intro-to-hmc/
+* https://bjlkeng.io/posts/hamiltonian-monte-carlo/ - Og se implementation her
+* https://github.com/bjlkeng/sandbox/blob/master/hmc/hmc.ipynb
+* https://blogs.rstudio.com/ai/posts/2019-10-03-intro-to-hmc/
+* https://github.com/ColCarroll/minimc?tab=readme-ov-file
+* https://www.youtube.com/watch?v=a-wydhEuAm0&list=PL4SE6Ciqnz113-Fx8LJexTe7hlV1t4CrY&index=4
 
+## Langevin Monte Carlo
 
-Langevin Monte Carlo
-https://bjlkeng.io/posts/bayesian-learning-via-stochastic-gradient-langevin-dynamics-and-bayes-by-backprop/#langevin-monte-carlo
-
-https://abdulfatir.com/blog/2020/Langevin-Monte-Carlo/
-
-
-
+* https://bjlkeng.io/posts/bayesian-learning-via-stochastic-gradient-langevin-dynamics-and-bayes-by-backprop/#langevin-monte-carlo
+* https://abdulfatir.com/blog/2020/Langevin-Monte-Carlo/
+* https://danmackinlay.name/notebook/mcmc_langevin
+* https://friedmanroy.github.io/blog/2022/Langevin/
 
 ## Gaussians
-https://medium.com/mti-technology/how-to-generate-gaussian-samples-347c391b7959
+
+* https://medium.com/mti-technology/how-to-generate-gaussian-samples-347c391b7959
+* https://cs229.stanford.edu/section/gaussians.pdf
+* https://online.stat.psu.edu/stat505/book/export/html/636#:~:text=Every%20single%20variable%20has%20a has%20a%20univariate%20normal%20distribution.
+
+### Various links
+
+https://github.com/pints-team/pints/blob/d4440e38cb0608190b90f4a5f6a5426d7f98bfcc/examples/sampling/first-example.ipynb
+https://friedmanroy.github.io/blog/2023/AIS/
+
+## Software
+
+* https://pints.readthedocs.io/en/stable/mcmc_samplers/nuts_mcmc.html
+* https://code.ornl.gov/2kv/slicesampling
+* https://github.com/willvousden/ptemcee/tree/main
+* https://github.com/ColCarroll/couplings/blob/master/couplings/metropolis_hastings.py#L123
+* https://colab.research.google.com/github/lyndond/lyndond.github.io/blob/master/code/2021-02-09-elliptical-slice-sampling.ipynb#scrollTo=0OZbf2dL-T-W

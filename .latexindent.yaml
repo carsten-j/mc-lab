@@ -1,0 +1,3 @@
+indentPreamble: 1
+defaultIndent: '    '
+alwaysLookforSplitBraces: 1

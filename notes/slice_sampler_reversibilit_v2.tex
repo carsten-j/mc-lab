@@ -6,6 +6,7 @@
 \usepackage{lmodern} % Enhanced Computer Modern
 \usepackage{titlesec}
 \usepackage[framemethod=TikZ]{mdframed}
+\usepackage{etoolbox} % For hooking into environments
 
 % Define colors to match the original
 \definecolor{lightblue}{RGB}{230, 240, 250}
@@ -66,6 +67,13 @@
 \newmdtheoremenv[style=blueframe]{theorem}{Theorem}
 \newmdtheoremenv[style=greenframe]{algorithm}{Algorithm}
 \newtheorem{proofsection}{Justification}
+
+% Tighter spacing between the Algorithm header and the first list item.
+% The perceived gap is dominated by enumerate's topsep, not by a manual \\
+% line break. We set list spacing locally for enumerate inside Algorithm.
+\AtBeginEnvironment{algorithm}{%
+    \setlist[enumerate]{topsep=0.0em, partopsep=0pt, parsep=0pt, itemsep=0.2em}%
+}
 
 \DeclareFixedFont{\cmsans}{T1}{cmss}{bx}{n}{12pt}
 \DeclareFixedFont{\cmsanscap}{T1}{cmss}{bx}{n}{14pt}

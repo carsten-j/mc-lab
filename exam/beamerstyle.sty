@@ -1,0 +1,64 @@
+\ProvidesPackage{beamerstyle}
+
+\usepackage[utf8]{inputenc}
+\usepackage{graphicx}
+
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{tikz}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.17}
+\usetikzlibrary{patterns,decorations.pathreplacing,calc}
+
+
+
+% Define the orange color (approximate)
+\definecolor{copenhagenred}{HTML}{ec6437}
+\definecolor{darkgray}{HTML}{4A4A4A}
+
+% Set theme and colors
+\usetheme{default}
+\usecolortheme{default}
+
+% Remove navigation symbols
+\setbeamertemplate{navigation symbols}{}
+
+% Set fonts
+\setbeamerfont{title}{size=\Huge, series=\bfseries}
+\setbeamerfont{frametitle}{size=\huge, series=\bfseries}
+\setbeamerfont{author}{size=\large}
+\setbeamerfont{institute}{size=\large}
+
+% Set colors
+\setbeamercolor{title}{fg=copenhagenred}
+\setbeamercolor{frametitle}{fg=copenhagenred}
+\setbeamercolor{itemize item}{fg=darkgray}
+\setbeamercolor{itemize subitem}{fg=darkgray}
+\setbeamercolor{normal text}{fg=darkgray}
+
+% Custom frame title template
+\setbeamertemplate{frametitle}{
+    \vspace{0.5cm}
+    \textbf{\insertframetitle}
+    \vspace{0.3cm}
+}
+
+% Custom theorem block with orange color and sharp corners
+\setbeamercolor{block title}{bg=copenhagenred, fg=white}
+\setbeamercolor{block body}{bg=copenhagenred!10, fg=darkgray}
+
+% Remove rounded corners
+\setbeamertemplate{blocks}[default]
+
+% Theorem environments
+\theoremstyle{plain}
+\newtheorem{proposition}{Proposition}
+% \newtheorem{lemma}{Lemma}
+% \newtheorem{corollary}{Corollary}
+% \newtheorem{theorem}{Theorem}
+% \newtheorem{lemma}[theorem]{Lemma}
+% \newtheorem{proposition}[theorem]{Proposition}
+% \newtheorem{corollary}[theorem]{Corollary}
+% \theoremstyle{definition}
+% \newtheorem{definition}[theorem]{Definition}
+% \newtheorem{example}[theorem]{Example}
