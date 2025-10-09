@@ -3,7 +3,8 @@
   "image": "ubuntu:latest",
   "mounts": [
     "source=${localWorkspaceFolder}/notes,target=/workspace/notes,type=bind",
-    "source=${localWorkspaceFolder}/problemSets,target=/workspace/problemSets,type=bind"
+    "source=${localWorkspaceFolder}/problemSets,target=/workspace/problemSets,type=bind",
+    "source=${localWorkspaceFolder}/exam,target=/workspace/exam,type=bind"
   ],
   "workspaceFolder": "/workspace",
   "features": {
