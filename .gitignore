@@ -24,4 +24,7 @@ build/
 *.fdb_latexmk
 *.fls
 *.bak*
+*.nav
+*.snm
+*.out
 notes/**/*.pdf
