@@ -16,10 +16,12 @@ build/
 *.egg-info/
 *.egg-info
 
+# LaTeX intermediate files
 *.aux
 *.log
 *.toc
 *.synctex.gz
 *.fdb_latexmk
 *.fls
+*.bak*
 notes/**/*.pdf
