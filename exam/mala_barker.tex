@@ -1,0 +1,299 @@
+\documentclass[aspectratio=169]{beamer}
+\usepackage{beamerstyle}
+\usepackage{algorithm}
+\usepackage{algorithmic}
+
+
+\begin{document}
+
+% Slide 2: Overview
+\begin{frame}{MALA and Barker's Proposal: Gradient-Based MCMC Methods}
+\Large
+\begin{itemize}
+    \item Background: From RWM to gradient-based methods
+    \item Langevin dynamics and discretization
+    \item Metropolis-Adjusted Langevin Algorithm (MALA)
+    \item Optimal scaling theory
+    \item Barker's Proposal: An alternative approach
+    \item Comparison and practical considerations
+\end{itemize}
+\end{frame}
+
+% Slide 3: Random Walk Metropolis Limitations
+\begin{frame}{Random Walk Metropolis: The Challenge}
+
+\textbf{Random Walk Metropolis (RWM):}
+$$q^* = q + \sigma W, \quad W \sim N(0, I_d)$$
+
+\begin{columns}
+\begin{column}{0.46\textwidth}
+\textbf{Fundamental Trade-off:}
+\begin{itemize}
+    \item Large $\sigma$: Low acceptance
+    \item Small $\sigma$: Slow exploration
+    \item Optimal: $\sigma = \bigO(d^{-1})$
+\end{itemize}
+\end{column}
+\begin{column}{0.46\textwidth}
+\begin{tikzpicture}[scale=0.8]
+    \draw[->] (0,0) -- (4,0) node[right] {$\sigma^2$};
+    \draw[->] (0,0) -- (0,3) node[above] {Rate};
+    \draw[copenhagenred, thick] (0.2,2.5) .. controls (1,2.3) and (2,1) .. (3.8,0.2) node[right] {Acceptance};
+    \draw[darkgray, thick] (0.2,0.2) .. controls (1,1) and (2,1.5) .. (3.8,2.8) node[right] {Step size};
+    \draw[dashed] (1.5,0) -- (1.5,1.4);
+    \node at (1.5,-0.3) {Optimal};
+\end{tikzpicture}
+\end{column}
+\end{columns}
+
+\vspace{1em}
+\textbf{Problem:} In high dimensions, RWM becomes inefficient
+\begin{itemize}
+    \item Optimal acceptance rate: 0.234
+    \item Curse of dimensionality: step size $\propto 1/d$
+\end{itemize}
+\end{frame}
+
+% Slide 4: Langevin Dynamics
+\begin{frame}{From Langevin Diffusion to MALA}
+
+\textbf{Continuous Langevin Diffusion:}
+$$dX_t = \frac{1}{2}\nabla\log\pi(X_t)dt + dB_t$$
+
+\begin{itemize}
+    \item Has $\pi$ as stationary distribution
+    \item Gradient provides drift toward high-probability regions
+\end{itemize}
+
+\vspace{0.5em}
+
+\textbf{Euler-Maruyama Discretization (ULA):}
+$$X^{(t)} = X^{(t-1)} + \frac{\epsilon}{2}\nabla\log\pi(X^{(t-1)}) + \sqrt{\epsilon}W$$
+
+
+\textbf{Problem} $\pi$ is \textbf{not} the invariant distribution of ULA!
+
+\textbf{Solution:} Add Metropolis-Hastings correction $\Rightarrow$ MALA
+\end{frame}
+
+% Slide 5: MALA Algorithm
+\begin{frame}{Metropolis-Adjusted Langevin Algorithm}
+
+\begin{algorithm}[H]
+\caption{MALA}
+\begin{algorithmic}
+\STATE \textbf{Input:} Initial $X^{(0)}$, step size $\epsilon$, target $\pi$, proposal $q$
+\FOR{$t = 1, 2, \ldots$}
+    \STATE Propose: $X^* = X^{(t-1)} + \frac{\epsilon}{2}\nabla\log\pi(X^{(t-1)}) + \sqrt{\epsilon}W$
+    \STATE Compute acceptance ratio:
+    $$\alpha = \min\left\{1, \frac{\pi(X^*)q(X^{(t-1)}|X^*)}{\pi(X^{(t-1)})q(X^*|X^{(t-1)})}\right\}$$
+    \STATE Accept $X^{(t)} = X^*$ with probability $\alpha$, else $X^{(t)} = X^{(t-1)}$
+\ENDFOR
+\end{algorithmic}
+\end{algorithm}
+
+\end{frame}
+
+% Slide 6: Optimal Scaling
+\begin{frame}{Optimal Scaling Theory}
+
+\begin{center}
+\large
+\textbf{Maximizing Expected Squared Jump Distance (ESJD)}
+$$\mathbb{E}\left[\|X^{(t+1)} - X^{(t)}\|^2\right]$$
+\end{center}
+
+% \vspace{0.5em}
+
+\begin{columns}
+\begin{column}{0.46\textwidth}
+\textbf{Dimension Scaling:}
+\begin{itemize}
+    \item RWM: $\sigma = \bigO(d^{-1})$
+    \item \textcolor{copenhagenred}{MALA: $\sigma = \bigO(d^{-1/3})$}
+\end{itemize}
+
+\vspace{0.5em}
+
+\textbf{Optimal Acceptance:}
+\begin{itemize}
+    \item RWM: 0.234
+    \item \textcolor{copenhagenred}{MALA: 0.574}
+\end{itemize}
+\end{column}
+\begin{column}{0.46\textwidth}
+\begin{tikzpicture}[scale=0.7]
+    \draw[->] (0,0) -- (5,0) node[right] {Dimension $d$};
+    \draw[->] (0,0) -- (0,3.5) node[above] {Step size};
+    \draw[darkgray, thick] (0.5,3) .. controls (2,1) and (3,0.5) .. (4.5,0.3);
+    \node[darkgray] at (4.5,0.6) {RWM};
+    \draw[copenhagenred, thick] (0.5,3) .. controls (2,2) and (3,1.5) .. (4.5,1.2);
+    \node[copenhagenred] at (4.5,1.5) {MALA};
+\end{tikzpicture}
+\end{column}
+\end{columns}
+
+\vspace{1em}
+
+\textbf{Implication:} MALA maintains larger step sizes in high dimensions
+\begin{itemize}
+    \item Better exploration efficiency
+    \item Faster convergence to target distribution
+    \item \textbf{Catch} - requires gradient computation
+\end{itemize}
+\end{frame}
+
+% Slide 7: Local-Balanced Proposals
+\begin{frame}{Local-Balanced Proposals}
+
+\textbf{General Framework:} Use local information about $\pi$
+
+\vspace{0.5em}
+
+\textbf{First-order (MALA):}
+$$X^* = X^{(t-1)} + \frac{\epsilon}{2}\nabla\log\pi(X^{(t-1)}) + \sqrt{\epsilon}W$$
+
+\textbf{Second-order:}
+$$X^* = X^{(t-1)} + \frac{\epsilon}{2}[\nabla^2\log\pi(X^{(t-1)})]^{-1}\nabla\log\pi(X^{(t-1)}) + \sqrt{\epsilon}W$$
+
+\vspace{0.5em}
+
+\begin{center}
+\begin{tikzpicture}[scale=0.8]
+    \draw[thick, darkgray] plot[smooth, tension=0.7] coordinates {(0,0.5) (1,1.5) (2,2.5) (3,2.8) (4,2) (5,1) (6,0.5)};
+    \node at (3,3.3) {$\pi(x)$};
+    \draw[thick, ->, darkgray] (2,2.5) -- (2.8,2.7);
+    \node[darkgray] at (3.5,3) {Gradient};
+    \draw[thick, ->, copenhagenred] (2,2.5) -- (2.6,2.9);
+    \node[copenhagenred] at (1.5,3.3) {Hessian-adjusted};
+\end{tikzpicture}
+\end{center}
+
+Higher-order methods better approximate local geometry
+\end{frame}
+
+% Slide 8: Barker's Proposal
+\begin{frame}{Barker's Proposal: An Alternative Approach}
+
+\textbf{Key Idea:} Use gradient to stochastically bias proposal direction
+
+\vspace{0.5em}
+
+\textbf{Proposal Density:} $Q_B(x, dy) = \frac{2}{1 + e^{-\nabla\log\pi(x)^T(y-x)}} K(x, dy)$
+
+where $K(x, dy)$ is a base kernel (e.g., Gaussian)
+
+\vspace{0.5em}
+
+
+
+\begin{algorithm}[H]
+\caption{1D case with Gaussian kernel}
+\begin{algorithmic}
+\STATE Sample $Z \sim N(0, \sigma^2)$
+\STATE Calculate  $p(x, z) = 1/(1 + \exp(-Z^T\nabla\log\pi(x)))$:
+\STATE Set $b(x,z) = 1$ with probability $p(x,z)$, else $b(x,z) = -1$
+\STATE Propose $Y = x + b(x,z)Z$
+\STATE Apply Metropolis-Hastings acceptance
+\end{algorithmic}
+\end{algorithm}
+
+\end{frame}
+
+% Slide 9: Comparison
+\begin{frame}{MALA vs Barker's Proposal}
+
+\begin{center}
+\large \textbf{Both use gradient information, but differently}
+\end{center}
+
+\vspace{0.5em}
+
+\begin{columns}
+\begin{column}{0.48\textwidth}
+\textbf{MALA:}
+\begin{itemize}
+    \item Deterministic drift
+    \item $X^* = X + \frac{\epsilon}{2}\nabla\log\pi + \text{noise}$
+    \item Gradient always adds to proposal
+    \item Well-studied optimal scaling
+    \item Proven efficiency in high dimensions
+\end{itemize}
+\end{column}
+\begin{column}{0.48\textwidth}
+\textbf{Barker:}
+\begin{itemize}
+    \item Stochastic direction choice
+    \item Probability depends on gradient
+    \item May flip proposal direction
+    \item More recent theoretical development
+    \item Potentially better for certain targets
+\end{itemize}
+\end{column}
+\end{columns}
+
+\vspace{1em}
+
+\begin{center}
+\begin{tikzpicture}[scale=0.6]
+    % MALA illustration
+    \draw[thick, ->] (0,0) -- (2,0.5) node[midway, below] {drift};
+    \draw[thick, ->, darkgray] (2,0.5) -- (2.5,1.5) node[right] {noise};
+    \draw[thick, ->, copenhagenred] (0,0) -- (2.5,1.5) node[midway, above] {MALA};
+    
+    % Barker illustration
+    \begin{scope}[xshift=6cm]
+    \draw[thick, ->] (0,0) -- (1,1) node[midway, below] {$+Z$};
+    \draw[thick, ->, dashed] (0,0) -- (-1,-1) node[midway, above] {$-Z$};
+    \node at (0,-1.5) {Barker};
+    \node at (2,0) {$p \propto \nabla\log\pi$};
+    \end{scope}
+\end{tikzpicture}
+\end{center}
+\end{frame}
+
+% Slide 10: Summary
+\begin{frame}{Summary and Practical Considerations}
+
+\textbf{Key Takeaways:}
+\begin{itemize}
+    \item Gradient information dramatically improves MCMC efficiency
+    \item MALA: Proven workhorse with $O(d^{-1/3})$ scaling
+    \item Barker: Promising alternative with different mixing properties
+    \item Both methods correct discretization bias via Metropolis step
+\end{itemize}
+
+\vspace{0.5em}
+
+\textbf{When to use which?}
+
+\begin{columns}
+\begin{column}{0.48\textwidth}
+\textcolor{copenhagenred}{\textbf{Choose MALA when:}}
+\begin{itemize}
+    \item High-dimensional problems
+    \item Gradients are cheap
+    \item Well-conditioned targets
+    \item Need proven reliability
+\end{itemize}
+\end{column}
+\begin{column}{0.48\textwidth}
+\textcolor{darkgray}{\textbf{Consider Barker when:}}
+\begin{itemize}
+    \item Exploring alternatives
+    \item Specific target structure
+    \item Research applications
+    \item Robustness needed
+\end{itemize}
+\end{column}
+\end{columns}
+
+\vspace{0.5em}
+
+\begin{center}
+\Large
+\textbf{Both methods: Major improvements over RWM!}
+\end{center}
+\end{frame}
+
+\end{document}

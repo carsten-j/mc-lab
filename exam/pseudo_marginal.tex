@@ -1,0 +1,416 @@
+\documentclass[aspectratio=169]{beamer}
+\usepackage{beamerstyle}
+\usepackage{listings}
+\usepackage{xcolor}
+
+\usetikzlibrary{shapes.geometric}
+
+% Code listing style
+\lstset{
+    language=Python,
+    basicstyle=\tiny\ttfamily,
+    keywordstyle=\color{blue},
+    commentstyle=\color{gray},
+    stringstyle=\color{red},
+    numbers=left,
+    numberstyle=\tiny\color{gray},
+    breaklines=true,
+    frame=single,
+    backgroundcolor=\color{gray!10}
+}
+
+
+\begin{document}
+
+
+% Slide 1: The Problem
+\begin{frame}{The Challenge: Intractable Marginals}
+\vspace{0.5cm}
+
+\begin{columns}
+\column{0.5\textwidth}
+\textbf{The Problem:}
+\begin{itemize}
+    \item Target: $\pi(x) = \int f(x,u) du$
+    \item $f(x,u)$ is known (complete data)
+    \item Integral is \textcolor{copenhagenred}{intractable}
+    \item Standard MCMC requires exact $\pi(x)$
+\end{itemize}
+
+\vspace{0.5cm}
+\textbf{Examples:}
+\begin{itemize}
+    \item Hidden Markov Models
+    \item Mixed Effects Models
+    \item Phylogenetics
+    \item Topic Models
+\end{itemize}
+
+\column{0.5\textwidth}
+\begin{tikzpicture}[scale=0.8]
+    % Draw the 3D-like space
+    \draw[fill=copenhagenred!20] (0,0) rectangle (4,3);
+    \node at (2,2.5) {$f(x,u)$};
+    \node at (2,1.5) {(known)};
+    
+    % Draw marginal
+    \draw[->, thick, copenhagenred] (4.5,1.5) -- (5.5,1.5);
+    \draw[fill=copenhagenred!40] (6,0.5) rectangle (6.3,2.5);
+    \node at (6.15,1.5) [rotate=90] {$\pi(x)$};
+    \node at (6.15,-0.2) {(unknown)};
+    
+    % Integration symbol
+    \node at (5,2.2) {$\int du$};
+\end{tikzpicture}
+
+\vspace{0.5cm}
+\textbf{Key Insight:} We can \textcolor{copenhagenred}{estimate} $\pi(x)$ unbiasedly!
+\end{columns}
+\end{frame}
+
+% Slide 2: The Solution
+\begin{frame}{The Pseudo-marginal Solution}
+
+\begin{columns}
+
+    \column{0.5\textwidth}
+        \textbf{Key Prerequisites}
+
+        \vspace{0.2cm}
+        For pseudo-marginal MCMC to be applicable, we need:
+        \begin{enumerate}
+        \item Ability to \textbf{evaluate} $f(x,u)$ pointwise for any $(x,u)$
+        \item Ability to \textbf{sample} from an importance distribution $q_x(\cdot)$ over the $u$-space
+        \item The importance distribution must have appropriate support: $q_x(u) > 0$ whenever $f(x,u) > 0$
+        \end{enumerate}
+
+    \column{0.5\textwidth}
+        \textbf{Importance Sampling Estimator:}
+        \begin{equation*}
+        \hat{\pi}(x) = \frac{1}{N} \sum_{i=1}^{N} \frac{f(x,U_i)}{q_x(U_i)}, \quad U_i \sim q_x(\cdot)
+        \end{equation*}
+
+        \vspace{0.3cm}
+        \textbf{Key Property:} $\mathbb{E}[\hat{\pi}(x)] = \pi(x)$ (unbiased!)
+
+        \vspace{0.3cm}
+        \textbf{The Magic:} Replace $\pi$ with $\hat{\pi}$ in MH ratio!
+        \begin{equation*}
+        \alpha = \min\left\{1, \frac{\hat{\pi}(y)q(y,x)}{\hat{\pi}(x)q(x,y)}\right\}
+        \end{equation*}
+        \vspace{0.3cm}
+        \textcolor{copenhagenred}{\textbf{Result:}} Still targets correct $\pi(x)$!
+        
+\end{columns}
+\end{frame}
+
+% Slide 3: Why it works
+\begin{frame}{Why It Works: Extended Target}
+
+    \begin{columns}
+        \column{0.5\textwidth}
+        One can think of estimator (the “pseudo-marginal”) as the product of the true target and a random variable:
+            \begin{equation*}
+            \hat{\pi}(x) = \pi(x) Z_x
+            \end{equation*}
+        where $Z_x$ satifies:
+        \begin{enumerate}
+            \item is non-negative: $Z_x \geq 0$,
+            \item has density $g_x(·)$: $\int_0^{\infty} g_x(z)dz = 1$
+            \item has expectation 1: $\mathbb{E}[Z_x] = \int_0^{\infty} z g_x(z) dz = 1$.
+        \end{enumerate}
+
+        \column{0.5\textwidth}
+            \textbf{Extended Target Construction:}
+            \begin{equation*}
+            \bar{\pi}(x,z) = \pi(x) \cdot z \cdot g_x(z)
+            \end{equation*}
+
+            where $g_x(z)$ is the density of $Z_x$
+
+            \vspace{0.5cm}
+            \textbf{Key Property:}
+            \begin{equation*}
+            \int \bar{\pi}(x,z) dz = \pi(x)
+            \end{equation*}
+
+            \vspace{0.3cm}
+            \textbf{Intuition:}
+            \begin{itemize}
+                \item Run exact MCMC on $(x,z)$ space
+                \item Marginal in $x$ gives correct target
+                \item $z$ represents the "noise" in estimates
+            \end{itemize}
+    \end{columns}
+\end{frame}
+
+% Slide 4: The Algorithm
+\begin{frame}{Pseudo-marginal MCMC Algorithm}
+
+\begin{columns}
+\column{0.5\textwidth}
+
+\begin{block}{Given $(X^{(t-1)}, \hat{\pi}^{(t-1)})$:}
+\begin{enumerate}
+    \item \textbf{Propose:} $Y \sim q(X^{(t-1)}, \cdot)$
+    \item \textbf{Estimate:} 
+    \begin{itemize}
+        \item Sample $U_i \sim q_Y(\cdot)$
+        \item $\hat{\pi}(Y) = \frac{1}{N}\sum_{i} \frac{f(Y,U_i)}{q_Y(U_i)}$
+    \end{itemize}
+    \item \textbf{Accept with probability:}
+    $$\alpha = \min\left\{1, \frac{\hat{\pi}(Y)q(Y,X^{(t-1)})}{\hat{\pi}^{(t-1)}q(X^{(t-1)},Y)}\right\}$$
+    \item \textbf{Update:}
+    \begin{itemize}
+        \item If accept: $(X^{(t)}, \hat{\pi}^{(t)}) = (Y, \hat{\pi}(Y))$
+        \item Else: $(X^{(t)}, \hat{\pi}^{(t)}) = (X^{(t-1)}, \hat{\pi}^{(t-1)})$
+    \end{itemize}
+\end{enumerate}
+\end{block}
+
+\column{0.5\textwidth}
+\textcolor{copenhagenred}{\textbf{Critical Points:}}
+\begin{itemize}
+    \item Store estimates with states! In the next iteration, use the stored $\hat{\pi}(X^{(t-1)})$.
+    \item Fresh randomness for each proposal. Every time you propose a new state Y, you must generate a completely new, independent estimate $\hat{\pi}(Y)$ using fresh random samples.
+    \item Works with \textit{any} MH proposal $q$
+\end{itemize}
+
+% \vspace{0.5cm}
+% \begin{tikzpicture}[scale=0.7]
+%     % Current state
+%     \filldraw[copenhagenred] (0,0) circle (0.1);
+%     \node[below] at (0,-0.3) {$(x, \hat{\pi}(x))$};
+    
+%     % Proposed state
+%     \filldraw[darkgray] (3,1) circle (0.1);
+%     \node[above] at (3,1.3) {$(y, \hat{\pi}(y))$};
+    
+%     % Arrow
+%     \draw[->, thick] (0.2,0.1) -- (2.8,0.9);
+%     \node[above] at (1.5,0.5) {propose};
+    
+%     % Accept/Reject
+%     \draw[->, thick, copenhagenred] (3.2,0.8) -- (3.2,0);
+%     \node[right] at (3.3,0.4) {\tiny accept?};
+% \end{tikzpicture}
+% \end{itemize}
+\end{columns}
+\end{frame}
+
+\begin{frame}{Equivalence to MH on Extended Space}
+    \begin{theorem}[Equivalence]
+Metropolis-Hastings on the extended target $\bar{\pi}$ with proposal $\bar{q}$ is equivalent to the pseudo-marginal algorithm using estimates $\hat{\pi}$.
+\end{theorem}
+
+Proof Sketch:
+The MH acceptance ratio on the extended space is:
+\begin{align*}
+\alpha_{ext} &= \min\left\{1, \frac{\bar{\pi}(y,w)\bar{q}((y,w),(x,z))}{\bar{\pi}(x,z)\bar{q}((x,z),(y,w))}\right\}\\
+&= \min\left\{1, \frac{\pi(y) \cdot w \cdot g_y(w) \cdot q(y,x) \cdot g_x(z)}{\pi(x) \cdot z \cdot g_x(z) \cdot q(x,y) \cdot g_y(w)}\right\}\\
+&= \min\left\{1, \frac{\pi(y) \cdot w \cdot q(y,x)}{\pi(x) \cdot z \cdot q(x,y)}\right\}
+= \min\left\{1, \frac{\hat{\pi}(y)q(y,x)}{\hat{\pi}(x)q(x,y)}\right\} = \alpha_{pm}
+\end{align*}
+In the last step, we used $\hat{\pi}(x) = \pi(x) z$ and $\hat{\pi}(y) = \pi(y) w$,
+which is exactly the pseudo-marginal acceptance probability.
+
+\end{frame}
+
+% Slide 6: Variance trade-off
+\begin{frame}{The Variance-Efficiency Trade-off}
+
+\begin{columns}
+\column{0.5\textwidth}
+\textbf{Choice of $N$ (sample size):}
+
+\begin{tikzpicture}[scale=0.8]
+    % Axes
+    \draw[->] (0,0) -- (5,0) node[right] {$N$};
+    \draw[->] (0,0) -- (0,4) node[above] {Rate};
+    
+    % Acceptance rate curve
+    \draw[thick, copenhagenred] plot[smooth, tension=0.7] coordinates {
+        (0.5,0.5) (1,1.2) (2,2.2) (3,2.8) (4,3.2) (4.5,3.3)
+    };
+    \node[copenhagenred] at (3.5,3.5) {Acceptance};
+    
+    % Efficiency curve
+    \draw[thick, darkgray] plot[smooth, tension=0.7] coordinates {
+        (0.5,1) (1,2) (2,2.5) (2.5,2.6) (3,2.4) (4,1.8) (4.5,1.3)
+    };
+    \node[darkgray] at (1.5,3.2) {Efficiency};
+    
+    % Optimal point
+    \draw[dashed] (2.5,0) -- (2.5,2.6);
+    \filldraw (2.5,2.6) circle (0.08);
+    \node[below] at (2.5,0) {$N^*$};
+    
+    % Labels
+    \node at (1,-0.5) {\tiny Small $N$};
+    \node at (4,-0.5) {\tiny Large $N$};
+\end{tikzpicture}
+
+\vspace{0.3cm}
+\textbf{Small $N$:} High variance, poor mixing\\
+\textbf{Large $N$:} Expensive per iteration
+
+\column{0.5\textwidth}
+\textbf{Optimal for Random Walk:}
+\begin{itemize}
+    \item $\text{Var}(Z_x) \approx 3.283$
+    \item Acceptance rate $\approx 7\%$
+    \item Much lower than standard MCMC (23\%)!
+\end{itemize}
+
+\vspace{0.5cm}
+\begin{tikzpicture}[scale=0.6]
+    % Three chains with different N
+    \foreach \n/\y/\col in {1/3/red!70, 10/1.5/darkgray, 100/0/copenhagenred} {
+        \draw[\col, thick] plot[smooth, tension=0.3] coordinates {
+            (0,\y) (0.5,\y+0.2*rand) (1,\y+0.3*rand) (1.5,\y+0.1*rand) 
+            (2,\y+0.4*rand) (2.5,\y+0.2*rand) (3,\y+0.3*rand)
+            (3.5,\y+0.1*rand) (4,\y+0.2*rand)
+        };
+    }
+    \node[right, red!70] at (4.2,3) {$N=1$};
+    \node[right, darkgray] at (4.2,1.5) {$N=10$};  
+    \node[right, copenhagenred] at (4.2,0) {$N=100$};
+    
+    \draw[->] (-0.2,-0.5) -- (4.5,-0.5);
+    \node at (2,-1) {Iteration};
+\end{tikzpicture}
+\end{columns}
+\end{frame}
+
+% Slide 8: Comparison
+\begin{frame}{Comparison: Standard vs Pseudo-marginal MCMC}
+
+\begin{columns}
+\column{0.5\textwidth}
+\textbf{Standard MCMC on $(x,u)$:}
+\begin{itemize}
+    \item[\color{red}$\times$] High dimensional
+    \item[\color{red}$\times$] Slow mixing in $u$
+    \item[\color{green}$\checkmark$] No tuning of $N$
+\end{itemize}
+
+\vspace{0.3cm}
+\textbf{Pseudo-marginal on $x$:}
+\begin{itemize}
+    \item[\color{green}$\checkmark$] Lower dimensional
+    \item[\color{green}$\checkmark$] Integrates out $u$
+    \item[\color{red}$\times$] Need to choose $N$
+    \item[\color{red}$\times$] More complex implementation
+\end{itemize}
+
+\column{0.5\textwidth}
+\begin{tikzpicture}[scale=0.7]
+    % Effective sample size comparison
+    \draw[->] (0,0) -- (5,0) node[right] {CPU time};
+    \draw[->] (0,0) -- (0,4) node[above] {ESS};
+    
+    % Standard MCMC
+    \draw[thick, darkgray] plot[smooth, tension=0.7] coordinates {
+        (0,0) (1,0.5) (2,1) (3,1.5) (4,2) (5,2.5)
+    };
+    \node[darkgray] at (3,0.8) {Standard};
+    
+    % Pseudo-marginal
+    \draw[thick, copenhagenred] plot[smooth, tension=0.7] coordinates {
+        (0,0) (1,1.2) (2,2.2) (3,3) (4,3.6) (5,4)
+    };
+    \node[copenhagenred] at (2,2.8) {Pseudo-marginal};
+    
+    % Annotations
+    \draw[dashed] (2.5,0) -- (2.5,2.6);
+    \node[below] at (2.5,0) {\tiny Same time};
+\end{tikzpicture}
+
+\vspace{0.3cm}
+\textcolor{copenhagenred}{\textbf{Key Message:}} Pseudo-marginal can be more efficient despite noise!
+\end{columns}
+\end{frame}
+
+% Slide 9: Practical Guidelines
+\begin{frame}{Practical Guidelines}
+
+\begin{columns}
+\column{0.5\textwidth}
+\textbf{When to use:}
+\begin{itemize}
+    \item Marginal likelihood intractable
+    \item Can evaluate $f(x,u)$ pointwise
+    \item Good importance distribution available
+    \item Dimension of $x$ moderate
+\end{itemize}
+
+\vspace{0.5cm}
+\textbf{Implementation checklist:}
+\begin{enumerate}
+    \item[\color{copenhagenred}$\square$] Store estimates with states
+    \item[\color{copenhagenred}$\square$] Use fresh randomness
+    \item[\color{copenhagenred}$\square$] Monitor acceptance rate
+    \item[\color{copenhagenred}$\square$] Tune $N$ for $\approx 7\%$ acceptance
+    \item[\color{copenhagenred}$\square$] Use log-scale for stability
+\end{enumerate}
+
+\column{0.5\textwidth}
+\textbf{Common pitfalls:}
+\begin{itemize}
+    \item Recomputing old estimates
+    \item Using $N$ too large
+    \item Poor importance distribution
+    \item Numerical overflow/underflow
+\end{itemize}
+
+\vspace{0.5cm}
+\begin{block}{Rule of Thumb}
+Choose $N$ such that:
+$$\text{CV}[\hat{\pi}(x)/\pi(x)] \approx 1.7$$
+This gives $\text{Var}(Z_x) \approx 3.3$
+\end{block}
+\end{columns}
+\end{frame}
+
+% Slide 10: Summary
+\begin{frame}{Summary}
+
+\begin{columns}
+\column{0.6\textwidth}
+\textbf{Pseudo-marginal MCMC:}
+\begin{itemize}
+    \item Enables exact inference with unbiased estimates
+    \item Theoretically elegant (extended target)
+    \item Practically powerful
+\end{itemize}
+
+\vspace{0.5cm}
+\textbf{Key papers:}
+\begin{itemize}
+    \item Beaumont (2003) - Introduction
+    \item \textcolor{copenhagenred}{Andrieu \& Roberts (2009)} - Theory
+    \item Sherlock et al. (2015) - Optimal scaling
+\end{itemize}
+
+\column{0.4\textwidth}
+\begin{tikzpicture}[scale=0.8]
+    % Summary diagram
+    \node[draw, rectangle, copenhagenred, thick] (target) at (0,3) {Target $\pi(x)$};
+    \node[draw, rectangle, darkgray] (estimate) at (0,1.5) {Estimate $\hat{\pi}(x)$};
+    \node[draw, rectangle, darkgray] (mcmc) at (0,0) {MCMC};
+    
+    \draw[->, thick] (target) -- (estimate) node[midway, right] {\tiny intractable};
+    \draw[->, thick] (estimate) -- (mcmc) node[midway, right] {\tiny unbiased};
+    
+    % Result
+    \node[draw, ellipse, copenhagenred, thick] at (0,-1.5) {Exact samples!};
+    \draw[->, thick, copenhagenred] (mcmc) -- (0,-1);
+\end{tikzpicture}
+
+\vspace{0.5cm}
+\textcolor{copenhagenred}{\textbf{Take-home message:}}\\
+\textit{Noise + Unbiasedness = Exactness}
+\end{columns}
+\end{frame}
+
+\end{document}

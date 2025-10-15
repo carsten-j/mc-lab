@@ -5,6 +5,9 @@ __pycache__/
 out/*
 !out/*.pdf
 
+exam/out/*
+!exam/out/*.pdf
+
 ProblemSets/3
 *.nc
 *.ipynb_checkpoints

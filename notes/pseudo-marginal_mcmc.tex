@@ -1,0 +1,388 @@
+\documentclass[11pt]{article}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{algorithm,algorithmic}
+\usepackage{hyperref}
+\usepackage{geometry}
+\geometry{margin=1in}
+
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}{Lemma}
+\newtheorem{remark}{Remark}
+\newtheorem{example}{Example}
+
+\title{Pseudo-marginal MCMC: A Comprehensive Tutorial}
+\author{Tutorial Report}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+This report provides a comprehensive introduction to pseudo-marginal Markov Chain Monte Carlo (MCMC) methods, complementing the lecture slides on the topic. We cover the theoretical foundations, practical implementation, and key insights that make these algorithms work. The methodology, pioneered by Christophe Andrieu and colleagues, enables Bayesian inference in cases where the target density can only be estimated unbiasedly rather than evaluated exactly.
+\end{abstract}
+
+\section{Introduction}
+
+Pseudo-marginal MCMC represents a significant breakthrough in computational statistics, addressing a fundamental challenge: how to perform Metropolis-Hastings sampling when we cannot evaluate the target density exactly, but can only obtain unbiased estimates of it.
+
+\subsection{The Problem Setting}
+
+Consider a target distribution with density $\pi(x)$ that has the form:
+\begin{equation}
+\pi(x) = \int f(x,u) \, du
+\end{equation}
+where:
+\begin{itemize}
+\item $x$ represents the parameters of interest
+\item $u$ represents latent variables (potentially high-dimensional)
+\item $f(x,u)$ is the complete data likelihood or posterior
+\item The integral is analytically intractable
+\end{itemize}
+
+\begin{example}[Practical Applications]
+\begin{enumerate}
+\item \textbf{Random effects models}: $u$ represents random effects
+\item \textbf{Hidden Markov models}: $u$ represents latent state sequences
+\item \textbf{Latent Dirichlet allocation}: $u$ represents topic assignments
+\item \textbf{Phylogenetics}: $u$ represents unobserved evolutionary histories
+\end{enumerate}
+\end{example}
+
+\subsection{Key Prerequisites}
+
+For pseudo-marginal MCMC to be applicable, we need:
+\begin{enumerate}
+\item Ability to \textbf{evaluate} $f(x,u)$ pointwise for any $(x,u)$
+\item Ability to \textbf{sample} from an importance distribution $q_x(\cdot)$ over the $u$-space
+\item The importance distribution must have appropriate support: $q_x(u) > 0$ whenever $f(x,u) > 0$
+\end{enumerate}
+
+Note that we do \textit{not} require the ability to sample efficiently from $f(x,u)$ itself, which is often the bottleneck in standard MCMC approaches.
+
+\section{The Core Idea}
+
+\subsection{Unbiased Estimation via Importance Sampling}
+
+The key insight is to estimate $\pi(x)$ using importance sampling:
+\begin{equation}
+\hat{\pi}(x) = \frac{1}{N} \sum_{i=1}^{N} \frac{f(x,U_i)}{q_x(U_i)}, \quad U_i \stackrel{i.i.d.}{\sim} q_x(\cdot)
+\end{equation}
+
+\begin{theorem}[Unbiasedness]
+The estimator $\hat{\pi}(x)$ is unbiased: $\mathbb{E}[\hat{\pi}(x)] = \pi(x)$.
+\end{theorem}
+
+\begin{proof}
+Taking the expectation with respect to the auxiliary variables:
+\begin{align}
+\mathbb{E}[\hat{\pi}(x)] &= \mathbb{E}\left[\frac{1}{N} \sum_{i=1}^{N} \frac{f(x,U_i)}{q_x(U_i)}\right]\\
+&= \frac{1}{N} \sum_{i=1}^{N} \mathbb{E}\left[\frac{f(x,U_i)}{q_x(U_i)}\right]\\
+&= \mathbb{E}\left[\frac{f(x,U)}{q_x(U)}\right] \quad \text{(since all $U_i$ are i.i.d.)}\\
+&= \int \frac{f(x,u)}{q_x(u)} \cdot q_x(u) \, du\\
+&= \int f(x,u) \, du = \pi(x)
+\end{align}
+\end{proof}
+
+\subsection{The Pseudo-marginal Principle}
+
+The remarkable discovery is that if we simply replace $\pi(x)$ with $\hat{\pi}(x)$ in the Metropolis-Hastings acceptance probability, the resulting algorithm still targets the correct distribution $\pi$.
+
+\begin{definition}[Pseudo-marginal Acceptance Probability]
+Given current state $x$ and proposed state $y$, the pseudo-marginal acceptance probability is:
+\begin{equation}
+\alpha(x,y) = \min\left\{1, \frac{\hat{\pi}(y)q(y,x)}{\hat{\pi}(x)q(x,y)}\right\}
+\end{equation}
+where $q(x,y)$ is the proposal density and $\hat{\pi}(\cdot)$ are unbiased estimates.
+\end{definition}
+
+\section{Theoretical Foundation}
+
+\subsection{The Extended Target Construction}
+
+To understand why pseudo-marginal MCMC works, we introduce an auxiliary variable formulation. We can write:
+\begin{equation}
+\hat{\pi}(x) = \pi(x) \cdot Z_x
+\end{equation}
+where $Z_x$ is a positive random variable with $\mathbb{E}[Z_x] = 1$ and density $g_x(\cdot)$.
+
+\begin{definition}[Extended Target]
+Define the extended target distribution on $(x,z)$ with density:
+\begin{equation}
+\bar{\pi}(x,z) = \pi(x) \cdot z \cdot g_x(z)
+\end{equation}
+\end{definition}
+
+\begin{lemma}[Marginal Property]
+The marginal distribution of $x$ under $\bar{\pi}$ is $\pi$:
+\begin{equation}
+\int \bar{\pi}(x,z) \, dz = \pi(x)
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+\begin{align}
+\int \bar{\pi}(x,z) \, dz &= \int \pi(x) \cdot z \cdot g_x(z) \, dz\\
+&= \pi(x) \int z \cdot g_x(z) \, dz\\
+&= \pi(x) \cdot \mathbb{E}[Z_x]\\
+&= \pi(x) \cdot 1 = \pi(x)
+\end{align}
+\end{proof}
+
+\subsection{Understanding the Different Proposal Densities}
+
+A common source of confusion involves the different uses of $q$ in the algorithm:
+
+\begin{itemize}
+\item \textbf{Parameter proposal} $q(x,y)$: The standard MCMC proposal for moving from state $x$ to state $y$
+\item \textbf{Importance sampling} $q_x(\cdot)$: The distribution used to sample auxiliary variables for estimating $\pi(x)$
+\end{itemize}
+
+These serve completely different purposes and are unrelated:
+\begin{itemize}
+\item $q(x,y)$ governs ``horizontal'' movement through parameter space
+\item $q_x(\cdot)$ enables ``vertical'' estimation of the target density at a fixed point
+\end{itemize}
+
+\subsection{The Extended Space Proposal}
+
+On the extended space $(x,z)$, the proposal distribution is:
+\begin{equation}
+\bar{q}((x,z),(y,w)) = q(x,y) \cdot g_y(w)
+\end{equation}
+
+This means:
+\begin{enumerate}
+\item Propose $y \sim q(x,\cdot)$ using the standard proposal
+\item Generate fresh $w \sim g_y(\cdot)$ (equivalently, compute a new estimate $\hat{\pi}(y)$)
+\end{enumerate}
+
+\begin{theorem}[Equivalence]
+Metropolis-Hastings on the extended target $\bar{\pi}$ with proposal $\bar{q}$ is equivalent to the pseudo-marginal algorithm using estimates $\hat{\pi}$.
+\end{theorem}
+
+\begin{proof}[Proof Sketch]
+The MH acceptance ratio on the extended space is:
+\begin{align}
+\alpha_{ext} &= \min\left\{1, \frac{\bar{\pi}(y,w)\bar{q}((y,w),(x,z))}{\bar{\pi}(x,z)\bar{q}((x,z),(y,w))}\right\}\\
+&= \min\left\{1, \frac{\pi(y) \cdot w \cdot g_y(w) \cdot q(y,x) \cdot g_x(z)}{\pi(x) \cdot z \cdot g_x(z) \cdot q(x,y) \cdot g_y(w)}\right\}\\
+&= \min\left\{1, \frac{\pi(y) \cdot w \cdot q(y,x)}{\pi(x) \cdot z \cdot q(x,y)}\right\}
+\end{align}
+
+Since $\hat{\pi}(x) = \pi(x) \cdot z$ and $\hat{\pi}(y) = \pi(y) \cdot w$:
+\begin{equation}
+\alpha_{ext} = \min\left\{1, \frac{\hat{\pi}(y)q(y,x)}{\hat{\pi}(x)q(x,y)}\right\}
+\end{equation}
+which is exactly the pseudo-marginal acceptance probability.
+\end{proof}
+
+\section{The Algorithm}
+
+\subsection{Complete Pseudo-marginal MCMC Algorithm}
+
+\begin{algorithm}
+\caption{Pseudo-marginal MCMC}
+\begin{algorithmic}[1]
+\STATE \textbf{Initialize:} Choose $X^{(0)}$ and compute $\hat{\pi}^{(0)} = \hat{\pi}(X^{(0)})$
+\FOR{$t = 1$ to $T$}
+    \STATE \textbf{Propose:} Sample $Y \sim q(X^{(t-1)}, \cdot)$
+    \STATE \textbf{Estimate:} 
+    \begin{itemize}
+        \item Sample $U_1, \ldots, U_N \stackrel{i.i.d.}{\sim} q_Y(\cdot)$
+        \item Compute $\hat{\pi}(Y) = \frac{1}{N}\sum_{i=1}^{N} \frac{f(Y,U_i)}{q_Y(U_i)}$
+    \end{itemize}
+    \STATE \textbf{Accept/Reject:} 
+    \begin{itemize}
+        \item Compute $\alpha = \min\left\{1, \frac{\hat{\pi}(Y)q(Y,X^{(t-1)})}{\hat{\pi}^{(t-1)}q(X^{(t-1)},Y)}\right\}$
+        \item Sample $u \sim \text{Uniform}(0,1)$
+    \end{itemize}
+    \IF{$u < \alpha$}
+        \STATE Set $(X^{(t)}, \hat{\pi}^{(t)}) = (Y, \hat{\pi}(Y))$
+    \ELSE
+        \STATE Set $(X^{(t)}, \hat{\pi}^{(t)}) = (X^{(t-1)}, \hat{\pi}^{(t-1)})$
+    \ENDIF
+\ENDFOR
+\end{algorithmic}
+\end{algorithm}
+
+\subsection{Critical Implementation Details}
+
+\begin{remark}[Store the Estimates]
+The algorithm maintains both $X^{(t)}$ and $\hat{\pi}^{(t)}$ as state variables. When a proposal is accepted, we store the estimate $\hat{\pi}(Y)$ for future use. This is crucial---never recompute estimates of previously visited states!
+\end{remark}
+
+\begin{remark}[Fresh Randomness]
+Each time we propose a new state $Y$, we must generate a completely fresh estimate $\hat{\pi}(Y)$ using new auxiliary variables. This independence is essential for the theoretical validity.
+\end{remark}
+
+\section{The Variance-Efficiency Trade-off}
+
+\subsection{Effect of Sample Size $N$}
+
+The choice of $N$ (number of importance samples) critically affects performance:
+
+\begin{theorem}[Variance Scaling]
+The variance of the estimator $\hat{\pi}(x)$ scales as $O(1/N)$. Equivalently, $\text{Var}(Z_x) \propto 1/N$.
+\end{theorem}
+
+This creates a fundamental trade-off:
+
+\begin{itemize}
+\item \textbf{Small $N$}: 
+    \begin{itemize}
+    \item[$+$] Cheap computation per iteration
+    \item[$-$] High variance in estimates
+    \item[$-$] Poor mixing (frequent rejections, sticky behavior)
+    \end{itemize}
+\item \textbf{Large $N$}:
+    \begin{itemize}
+    \item[$+$] Better mixing (behaves more like exact MCMC)
+    \item[$+$] More stable acceptance ratios
+    \item[$-$] Expensive computation per iteration
+    \end{itemize}
+\end{itemize}
+
+\subsection{Optimal Choice of $N$}
+
+\begin{theorem}[Optimal Variance for Random Walk Metropolis \cite{sherlock2015}]
+For pseudo-marginal random walk Metropolis, optimal computational efficiency is achieved when:
+\begin{itemize}
+\item $\text{Var}(Z_x) \approx 3.283$
+\item Acceptance rate $\approx 7\%$
+\end{itemize}
+\end{theorem}
+
+This is surprising compared to standard RWM, where the optimal acceptance rate is approximately $23\%$. The lower acceptance rate accounts for the additional noise in the estimates.
+
+\begin{remark}[Practical Guidelines]
+\begin{enumerate}
+\item Choose $N$ such that the coefficient of variation of $\hat{\pi}(x)/\pi(x)$ is approximately $1.7$--$1.8$
+\item Monitor acceptance rates: if much below $7\%$, consider increasing $N$
+\item Remember: some noise is beneficial for computational efficiency!
+\end{enumerate}
+\end{remark}
+
+\section{Implementation Considerations}
+
+\subsection{Choice of Importance Distribution}
+
+The importance distribution $q_x(\cdot)$ should:
+\begin{enumerate}
+\item Have appropriate support: $q_x(u) > 0$ whenever $f(x,u) > 0$
+\item Be easy to sample from
+\item Provide reasonable importance weights $f(x,u)/q_x(u)$
+\item Potentially adapt to the parameter $x$ for efficiency
+\end{enumerate}
+
+\begin{example}[Common Choices]
+\begin{itemize}
+\item \textbf{Prior distribution}: $q_x(u) = p(u)$ (parameter-independent)
+\item \textbf{Laplace approximation}: $q_x(u) = \mathcal{N}(u; \hat{u}_x, \Sigma_x)$ centered at MAP
+\item \textbf{Sequential Monte Carlo}: For time series, use filtering distributions
+\end{itemize}
+\end{example}
+
+\subsection{Diagnostic Tools}
+
+\begin{enumerate}
+\item \textbf{Monitor acceptance rate}: Should be around $7\%$ for RWM
+\item \textbf{Track estimate variability}: Record $\hat{\pi}(x)/\hat{\pi}_{\text{prev}}(x)$ when revisiting states
+\item \textbf{Effective sample size}: Monitor ESS of importance sampling
+\item \textbf{Standard MCMC diagnostics}: Trace plots, autocorrelation, $\hat{R}$
+\end{enumerate}
+
+\section{Advanced Topics and Extensions}
+
+\subsection{Correlated Pseudo-marginal Methods}
+
+Recent work has explored using correlated estimates across iterations to improve mixing:
+\begin{equation}
+U_i^{(t)} = \rho U_i^{(t-1)} + \sqrt{1-\rho^2} V_i^{(t)}
+\end{equation}
+where $V_i^{(t)}$ are fresh random variables and $\rho \in [0,1]$ controls correlation.
+
+\subsection{Adaptive Pseudo-marginal MCMC}
+
+Adaptively choosing $N$ during the run:
+\begin{itemize}
+\item Start with small $N$, increase if acceptance rate too low
+\item Use pilot runs to estimate optimal $N$
+\item Balance exploration and exploitation phases
+\end{itemize}
+
+\subsection{Particle MCMC}
+
+When $u$ represents a sequence (e.g., in state-space models), Sequential Monte Carlo (SMC) provides the unbiased estimates:
+\begin{equation}
+\hat{\pi}(x) = \prod_{t=1}^{T} \left[\frac{1}{N}\sum_{i=1}^{N} w_t^{(i)}\right]
+\end{equation}
+where $w_t^{(i)}$ are importance weights from the SMC algorithm.
+
+\section{Common Pitfalls and Solutions}
+
+\begin{enumerate}
+\item \textbf{Pitfall}: Recomputing estimates when revisiting states
+    \begin{itemize}
+    \item \textbf{Solution}: Always store and reuse estimates
+    \end{itemize}
+    
+\item \textbf{Pitfall}: Using too large $N$ for ``safety''
+    \begin{itemize}
+    \item \textbf{Solution}: Remember that $\text{Var}(Z_x) \approx 3$ is optimal
+    \end{itemize}
+    
+\item \textbf{Pitfall}: Poor importance distribution choice
+    \begin{itemize}
+    \item \textbf{Solution}: Ensure good coverage of high-probability regions
+    \end{itemize}
+    
+\item \textbf{Pitfall}: Not monitoring the quality of estimates
+    \begin{itemize}
+    \item \textbf{Solution}: Track ESS and weight variability
+    \end{itemize}
+\end{enumerate}
+
+\section{Conclusion}
+
+Pseudo-marginal MCMC represents a powerful extension of standard MCMC methodology, enabling exact Bayesian inference in situations where only unbiased estimates of the target density are available. The key insights are:
+
+\begin{enumerate}
+\item Unbiased estimates preserve the correct stationary distribution
+\item The algorithm can be understood as exact MCMC on an extended space
+\item Some noise in the estimates is actually beneficial for efficiency
+\item Careful implementation (storing estimates, fresh randomness) is crucial
+\end{enumerate}
+
+The methodology has opened up new possibilities for Bayesian inference in complex models with intractable likelihoods, making it an essential tool in the modern computational statistics toolkit.
+
+\begin{thebibliography}{10}
+
+\bibitem{andrieu2009}
+Andrieu, C. and Roberts, G. O. (2009).
+\newblock The pseudo-marginal approach for efficient Monte Carlo computations.
+\newblock \emph{The Annals of Statistics}, 37(2):697--725.
+
+\bibitem{beaumont2003}
+Beaumont, M. A. (2003).
+\newblock Estimation of population growth or decline in genetically monitored populations.
+\newblock \emph{Genetics}, 164(3):1139--1160.
+
+\bibitem{sherlock2015}
+Sherlock, C., Thiery, A. H., Roberts, G. O., and Rosenthal, J. S. (2015).
+\newblock On the efficiency of pseudo-marginal random walk Metropolis algorithms.
+\newblock \emph{The Annals of Statistics}, 43(1):238--275.
+
+\bibitem{andrieu2015}
+Andrieu, C., Doucet, A., and Holenstein, R. (2010).
+\newblock Particle Markov chain Monte Carlo methods.
+\newblock \emph{Journal of the Royal Statistical Society: Series B}, 72(3):269--342.
+
+\bibitem{doucet2015}
+Doucet, A., Pitt, M. K., Deligiannidis, G., and Kohn, R. (2015).
+\newblock Efficient implementation of Markov chain Monte Carlo when using an unbiased likelihood estimator.
+\newblock \emph{Biometrika}, 102(2):295--313.
+
+\end{thebibliography}
+
+\end{document}

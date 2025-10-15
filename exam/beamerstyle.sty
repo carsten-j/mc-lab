@@ -7,10 +7,20 @@
 \usepackage{amssymb}
 \usepackage{tikz}
 \usepackage{pgfplots}
+\usepackage{algorithm}
+\usepackage{algorithmic}
+\usepackage{subfigure}
+\usepackage{animate}
+\usepackage{booktabs}
+\usepackage{multirow}
+
 \pgfplotsset{compat=1.17}
 \usetikzlibrary{patterns,decorations.pathreplacing,calc}
 
-
+% \usepackage{pifont}
+% \usepackage{newunicodechar}
+% \newunicodechar{✓}{\ding{51}}
+% \newunicodechar{✗}{\ding{55}}
 
 % Define the orange color (approximate)
 \definecolor{copenhagenred}{HTML}{ec6437}
@@ -63,9 +73,17 @@
 % \newtheorem{definition}[theorem]{Definition}
 % \newtheorem{example}[theorem]{Example}
 
+\newcommand{\temp}{\mathrm{T}}
+\newcommand{\swap}{\leftrightarrow}
+\DeclareMathOperator*{\argmin}{arg\,min}
+\DeclareMathOperator*{\argmax}{arg\,max}
+
+
 % Custom commands
 \newcommand{\highlighttext}[1]{\colorbox{highlight}{#1}}
 \newcommand{\R}{\mathbb{R}}
 \newcommand{\E}{\mathbb{E}}
 \newcommand{\Var}{\text{Var}}
 \newcommand{\indicator}{\mathbf{1}}
+
+\newcommand{\bigO}{\mathcal{O}}
