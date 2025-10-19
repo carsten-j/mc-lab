@@ -1,0 +1,140 @@
+\documentclass[aspectratio=169]{beamer}
+\usepackage{beamerstyle}
+
+
+
+\begin{document}
+
+\begin{frame}
+\frametitle{Vanilla HMC}
+
+\begin{itemize}
+  \item Hamiltonian Monte Carlo (HMC) is an MCMC algorithm that leverages concepts from physics to propose new states in the Markov chain.
+  \item It introduces auxiliary momentum variables and simulates Hamiltonian dynamics to explore the target distribution more efficiently.
+  \item In class we saw how MALA improved upon RW-Metropolis by using gradient information; HMC takes this further by simulating trajectories in the state space.
+  \item In high-dimensional spaces it is not enough to explore regions around the modes.
+  \item In high dimensions, probability mass concentrates on a thin shell away from modes
+  \item This typical set has lower density but massive volume → contains most probability mass
+  \item Example: In 100D Gaussian, samples lie ~10 units from origin, not at origin!
+  \item So we need a method that makes proposals based on more than the local moves or local gradient at the current position.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Physical Interpretation}
+\textbf{Neal, 2011}
+
+\textit{
+In two dimensions, we can visualize the dynamics as that of a frictionless puck that
+slides over a surface of varying height. The state of this system consists of the
+position of the puck, given by a $2D$ vector $q$, and the momentum of the puck
+(its mass times its velocity), given by a $2D$ vector $p$.}
+
+\textit{
+On a level part of the surface, the puck moves at a constant velocity.
+If it encounters a rising slope, the puck's momentum allows it to continue, with its
+kinetic energy $K(p)$ decreasing and its potential energy $U(q)$ increasing, until the kinetic energy
+is zero, at which point it will slide back down (with kinetic energy increasing and
+potential energy decreasing)}
+
+\textit{
+In non-physical MCMC applications of Hamiltonian dynamics, the position will correspond to the variables of interest. The potential energy will be minus the log of the probability density for these variables. Momentum variables, one for each position variable, will
+be introduced artificially.}
+\end{frame}
+
+\begin{frame}{Hamiltonian Dynamics and Equations}
+
+Our target distribution is defined in terms of a potential energy function $U(q)$, 
+which encodes the negative log probability of the target distribution $\pi(q)$ that we wish to sample from.
+
+The dynamics of the system can be described by Hamilton's equations, which govern 
+the time evolution of the position and momentum variables. In our case, 
+these equations take the form:
+
+\begin{equation*}
+\frac{dq}{dt} = \frac{\partial H}{\partial p} \quad \text{and} \quad
+\frac{dp}{dt} = -\frac{\partial H}{\partial q}
+\end{equation*}
+
+where $H(q, p)$ is the Hamiltonian function, representing the total energy of the system,
+ given by the sum of kinetic and potential energy:
+
+\begin{equation*}
+H(q, p) = K(p) + U(q) = \frac{1}{2} p^T M^{-1} p + U(q)
+\end{equation*}
+
+\end{frame}
+
+
+
+
+
+\begin{frame}{Leapfrog Integrator}
+To numerically simulate Hamiltonian dynamics, we use the leapfrog integrator, which is a
+symplectic method that preserves the volume in phase space and is time-reversible.
+\begin{align*}
+p\left(t + \frac{\varepsilon}{2}\right) &= p(t) - \frac{\varepsilon}{2} \nabla U(q(t)) \\
+q(t + \varepsilon) &= q(t) + \varepsilon M^{-1} p\left(t + \frac{\varepsilon}{2}\right) \\
+p(t + \varepsilon) &= p\left(t + \frac{\varepsilon}{2}\right) - \frac{\varepsilon}{2} \nabla U(q(t + \varepsilon))
+\end{align*}
+where $\varepsilon$ is the step size.
+
+The Leapfrog integrator is used to simulate the Hamiltonian dynamics over a series of steps, so it
+is the backbone of the proposal mechanism in HMC or in other words it transforms the current state
+to a proposed new state. Being symplectic means that this transformation preserves volume in phase space and
+that the Jacobian determinant of the transformation is equal to one and hence the Metropolis
+Acceptance ratio needs no volume correction factor.
+\end{frame}
+
+
+
+\begin{frame}{Vanilla HMC Algorithm}
+
+\begin{block}{Algorithm}
+Requires: Leapfrog integrator $\varphi$, step-size $\varepsilon$, number of steps $L$, current position $q_n$
+and positive definite matrix $M$.
+  
+\begin{enumerate}
+    \item \textbf{Energy Lift}: given $q_t$, draw $p_t \sim N(0, M)$  - (random) \\
+    This "lifts" our position into phase space by adding kinetic energy
+    
+    \item \textbf{Hamilton flow}: $q^*, p^* = \varphi_{\varepsilon}^L(q_t, p_t)$ - (deterministic)\\
+    Simulate dynamics for $L$ steps using leapfrog integrator. Follow energy-conserving  \\
+    trajectory through phase space. The chain is constructed on the joint $(q, p)$; 
+    marginalizing $p$ yields $\pi(q)$ stationarity.
+
+    \item \textbf{Metropolis acceptance step} - (random) \\
+    accept $q_{t+1} = q^*$ with probability
+    $\min\Big\{1, \exp(H(q_t, p_t) - H(q^*, -p^*))\Big\}$ \\
+    Corrects for numerical errors in integration. No Jacobian term; leapfrog is volume-preserving
+\end{enumerate}
+\end{block}  
+Note $H(q^*, -p^*) = H(q^*, p^*)$ because the chosen $K$ is even in $p$, so the minus is redundant.
+
+\end{frame}
+
+\begin{frame}{Choosing parameters in HMC}
+\textbf{Another story...} 
+\vspace{0.5cm}
+
+\textbf{Step-size $\varepsilon$}: optimal scaling
+
+\begin{itemize}
+  \item Dimension dependence of stepsize:
+    \begin{itemize}
+      \item RWM: $\bigO(d^{-1})$
+      \item MALA: $\bigO(d^{-1/3})$
+      \item HMC: $\bigO(d^{-1/4})$
+    \end{itemize}
+  \item Optimal acceptance rates:
+    \begin{itemize}
+      \item RWM: 0.234 (see Roberts, et. al., 1997)
+      \item MALA: 0.574 (see Roberts and Rosenthal, 1998)
+      \item HMC: 0.651 (see Beskos, et. al., 2013)
+    \end{itemize}
+\end{itemize}
+\vspace{0.5cm}
+\textbf{Choose $L$ adaptively}: NUTS sampler
+
+\end{frame}
+
+\end{document}
