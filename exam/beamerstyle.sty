@@ -2,7 +2,6 @@
 
 \usepackage[utf8]{inputenc}
 \usepackage{graphicx}
-
 \usepackage{amsmath}
 \usepackage{amssymb}
 \usepackage{tikz}
@@ -13,14 +12,11 @@
 \usepackage{animate}
 \usepackage{booktabs}
 \usepackage{multirow}
+\usepackage{listings}
+\usepackage{xcolor}
 
 \pgfplotsset{compat=1.17}
-\usetikzlibrary{patterns,decorations.pathreplacing,calc}
-
-% \usepackage{pifont}
-% \usepackage{newunicodechar}
-% \newunicodechar{✓}{\ding{51}}
-% \newunicodechar{✗}{\ding{55}}
+\usetikzlibrary{patterns,decorations.pathreplacing,calc,shapes.geometric}
 
 % Define the orange color (approximate)
 \definecolor{copenhagenred}{HTML}{ec6437}
@@ -63,24 +59,13 @@
 % Theorem environments
 \theoremstyle{plain}
 \newtheorem{proposition}{Proposition}
-% \newtheorem{lemma}{Lemma}
-% \newtheorem{corollary}{Corollary}
-% \newtheorem{theorem}{Theorem}
-% \newtheorem{lemma}[theorem]{Lemma}
-% \newtheorem{proposition}[theorem]{Proposition}
-% \newtheorem{corollary}[theorem]{Corollary}
-% \theoremstyle{definition}
-% \newtheorem{definition}[theorem]{Definition}
-% \newtheorem{example}[theorem]{Example}
 
 \newcommand{\temp}{\mathrm{T}}
 \newcommand{\swap}{\leftrightarrow}
 \DeclareMathOperator*{\argmin}{arg\,min}
 \DeclareMathOperator*{\argmax}{arg\,max}
 
-
 \definecolor{highlight}{RGB}{255,235,59}
-
 
 % Custom commands
 \newcommand{\highlighttext}[1]{\colorbox{highlight}{#1}}
@@ -91,8 +76,21 @@
 
 \newcommand{\bigO}{\mathcal{O}}
 
-
 \setbeamertemplate{footline}[frame number]
 \setbeamertemplate{footline}{
 	\hfill\insertframenumber/\inserttotalframenumber\hspace{2mm}\vspace{2mm}
+}
+
+% Code listing style
+\lstset{
+    language=Python,
+    basicstyle=\tiny\ttfamily,
+    keywordstyle=\color{blue},
+    commentstyle=\color{gray},
+    stringstyle=\color{red},
+    numbers=left,
+    numberstyle=\tiny\color{gray},
+    breaklines=true,
+    frame=single,
+    backgroundcolor=\color{gray!10}
 }

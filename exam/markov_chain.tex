@@ -1,0 +1,53 @@
+\documentclass[aspectratio=169]{beamer}
+\usepackage{beamerstyle}
+
+\begin{document}
+
+\begin{frame}
+	\vspace{2cm}
+	\begin{center}
+		{\Huge\textbf{\textcolor{copenhagenred}{Markov Chains}}}
+		\vspace{1cm}
+
+		\rule{4cm}{3pt}
+		\vspace{2cm}
+	\end{center}
+\end{frame}
+
+\begin{frame}{What is a Markov Chain?}
+    \textbf{Definition:} A discrete-time process \textit{Markov Chain} is a sequence of random variables $\{X_t\}_{t \geq 0}$ with the property that, given the present state, the future and past states are independent. Formally,
+    \begin{equation*}
+        P(X_{t+1} | X_t, X_{t-1}, \ldots, X_0) = P(X_{t+1} | X_t).
+    \end{equation*}
+    The Markov Chain is \textbf{time-homogeneous} if the transition probabilities do not depend on time $t$:
+    \begin{equation*}
+        \forall n \in N, \quad P(X_t = y | X_{t-1} = x) = P(X_{t+m} = y | X_{t+m-1} = x)
+    \end{equation*}
+    i.e. transition probabilities do not depend on $t$.
+    The \textbf{key idea} is MCMC is to construct a Markov Chains such that $x_t$ converges 
+    to a desired distribution $\pi$ as $t \to \infty$ and
+    \begin{equation*}
+        \frac{1}{n} \sum_{t=1}^n \phi(x_t) \to \mathbb{E}_{x \sim \pi}[\phi(x)] \quad \text{as } n \to \infty.
+    \end{equation*}
+    What kinds of conditions are required for this to hold?
+\end{frame}
+
+\begin{frame}{Invariant / stationary distribution}
+    A distribution $\pi$ is called \textbf{invariant} (or \textbf{stationary}) for a Markov Chain with transition kernel $P$ if
+    \begin{equation*}
+        \pi(y) = \int \pi(x) P(x, y) dx.
+    \end{equation*}
+    Intuitively, if the chain starts with distribution $\pi$, it remains in distribution $\pi$ at all future times.
+\end{frame}
+
+\begin{frame}{Irreducible}
+    A Markov Chain is called \textbf{irreducible} if it is possible to get to any state 
+    from any state. Formally, for any states $x$ and $y$, there exists an integer
+    $0 \leq n < \infty$ such that
+    \begin{equation*}
+        P^n(x, y) > 0,
+    \end{equation*}
+    where $P^n(x, y)$ is the $n$-step transition probability from state $x$ to state $y$.
+\end{frame}
+
+\end{document}
