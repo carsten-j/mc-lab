@@ -1,6 +1,8 @@
 \documentclass[aspectratio=169]{beamer}
 \usepackage{beamerstyle}
 
+% slides 7
+
 \begin{document}
 
 \begin{frame}
@@ -131,71 +133,71 @@
 \end{frame}
 
 
-\begin{frame}{Why $w$ is Not a Critical Tuning Parameter}
+% \begin{frame}{Why $w$ is Not a Critical Tuning Parameter}
 
-	\begin{block}{The Width Parameter $w$: Efficiency vs. Correctness}
-		Yes, $w$ IS technically a tuning parameter, BUT...
-	\end{block}
+% 	\begin{block}{The Width Parameter $w$: Efficiency vs. Correctness}
+% 		Yes, $w$ IS technically a tuning parameter, BUT...
+% 	\end{block}
 
-	\begin{columns}[T]
-		\begin{column}{0.48\textwidth}
-			\textbf{Traditional MCMC (e.g., RW-Metropolis)}
-			\begin{itemize}
-				\item \textbf{Poor tuning $\rightarrow$ Poor mixing}
-				\item $\sigma$ too small $\rightarrow$ Tiny steps, stuck
-				\item $\sigma$ too large $\rightarrow$ High rejection
-				\item Can take exponentially long
-				\item \highlighttext{Affects correctness in finite time}
-			\end{itemize}
-		\end{column}
-		\begin{column}{0.48\textwidth}
-			\textbf{Slice Sampling with $w$}
-			\begin{itemize}
-				\item \textbf{Poor $w$ $\rightarrow$ More computation}
-				\item $w$ too small $\rightarrow$ Many step-outs
-				\item $w$ too large $\rightarrow$ More shrinking
-				\item Always finds correct slice
-				\item \highlighttext{Only affects efficiency}
-			\end{itemize}
-		\end{column}
-	\end{columns}
-\end{frame}
+% 	\begin{columns}[T]
+% 		\begin{column}{0.48\textwidth}
+% 			\textbf{Traditional MCMC (e.g., RW-Metropolis)}
+% 			\begin{itemize}
+% 				\item \textbf{Poor tuning $\rightarrow$ Poor mixing}
+% 				\item $\sigma$ too small $\rightarrow$ Tiny steps, stuck
+% 				\item $\sigma$ too large $\rightarrow$ High rejection
+% 				\item Can take exponentially long
+% 				\item \highlighttext{Affects correctness in finite time}
+% 			\end{itemize}
+% 		\end{column}
+% 		\begin{column}{0.48\textwidth}
+% 			\textbf{Slice Sampling with $w$}
+% 			\begin{itemize}
+% 				\item \textbf{Poor $w$ $\rightarrow$ More computation}
+% 				\item $w$ too small $\rightarrow$ Many step-outs
+% 				\item $w$ too large $\rightarrow$ More shrinking
+% 				\item Always finds correct slice
+% 				\item \highlighttext{Only affects efficiency}
+% 			\end{itemize}
+% 		\end{column}
+% 	\end{columns}
+% \end{frame}
 
-\begin{frame}{Why $w$ is Not a Critical Tuning Parameter}
-	\textbf{Why $w$ is Robust: The Self-Correcting Mechanism}
+% \begin{frame}{Why $w$ is Not a Critical Tuning Parameter}
+% 	\textbf{Why $w$ is Robust: The Self-Correcting Mechanism}
 
-	\begin{columns}[T]
-		\begin{column}{0.48\textwidth}
-			\textbf{Case 1: $w \ll$ typical slice width}
-			\begin{itemize}
-				\item Initial $[L, R]$ doesn't cover slice
-				\item Stepping-out expands it
-				\item $\checkmark$ Still finds correct slice!
-			\end{itemize}
-		\end{column}
-		\begin{column}{0.48\textwidth}
-			\textbf{Case 2: $w \gg$ typical slice width}
-			\begin{itemize}
-				\item Initial $[L, R]$ too wide
-				\item Shrinking contracts it
-				\item $\checkmark$ Still samples correctly!
-			\end{itemize}
-		\end{column}
-	\end{columns}
+% 	\begin{columns}[T]
+% 		\begin{column}{0.48\textwidth}
+% 			\textbf{Case 1: $w \ll$ typical slice width}
+% 			\begin{itemize}
+% 				\item Initial $[L, R]$ doesn't cover slice
+% 				\item Stepping-out expands it
+% 				\item $\checkmark$ Still finds correct slice!
+% 			\end{itemize}
+% 		\end{column}
+% 		\begin{column}{0.48\textwidth}
+% 			\textbf{Case 2: $w \gg$ typical slice width}
+% 			\begin{itemize}
+% 				\item Initial $[L, R]$ too wide
+% 				\item Shrinking contracts it
+% 				\item $\checkmark$ Still samples correctly!
+% 			\end{itemize}
+% 		\end{column}
+% 	\end{columns}
 
-	\begin{block}{Mathematical Guarantee}
-		For ANY $w > 0$:
-		\begin{itemize}
-			\item The stationary distribution is ALWAYS $\pi(x)$
-			\item Detailed balance is satisfied
-			\item Convergence is guaranteed
-		\end{itemize}
-	\end{block}
+% 	\begin{block}{Mathematical Guarantee}
+% 		For ANY $w > 0$:
+% 		\begin{itemize}
+% 			\item The stationary distribution is ALWAYS $\pi(x)$
+% 			\item Detailed balance is satisfied
+% 			\item Convergence is guaranteed
+% 		\end{itemize}
+% 	\end{block}
 
-	\begin{alertblock}{Key Distinction}
-		In slice sampling, $w$ affects ``how many function evaluations per sample'' not ``whether we get correct samples''
-	\end{alertblock}
-\end{frame}
+% 	\begin{alertblock}{Key Distinction}
+% 		In slice sampling, $w$ affects ``how many function evaluations per sample'' not ``whether we get correct samples''
+% 	\end{alertblock}
+% \end{frame}
 
 \begin{frame}{Why Slice Sampling Converges}
 
@@ -233,40 +235,49 @@
 \end{frame}
 
 
-\begin{frame}{Convergence: Additional Mathematical Details}
+% \begin{frame}{Convergence: Additional Mathematical Details}
 
-	\begin{block}{Detailed Balance - Complete Argument}
-		Consider augmented state space $(x, y)$ with invariant distribution:
-		$$\pi^*(x, y) = \frac{1}{Z} \cdot \indicator\{0 \leq y \leq \pi(x)\}$$
-		where $Z = \int \pi(x)dx$ is the normalization constant.
-	\end{block}
+% 	\begin{block}{Detailed Balance - Complete Argument}
+% 		Consider augmented state space $(x, y)$ with invariant distribution:
+% 		$$\pi^*(x, y) = \frac{1}{Z} \cdot \indicator\{0 \leq y \leq \pi(x)\}$$
+% 		where $Z = \int \pi(x)dx$ is the normalization constant.
+% 	\end{block}
 
-	\textbf{The Gibbs Sampler View}
+% 	\textbf{The Gibbs Sampler View}
 
-	Slice sampling is a Gibbs sampler on the augmented space:
+% 	Slice sampling is a Gibbs sampler on the augmented space:
+% 	\begin{itemize}
+% 		\item \textbf{Step 1:} Sample $y | x \sim \text{Uniform}(0, \pi(x))$
+% 		\item \textbf{Step 2:} Sample $x | y \sim \text{Uniform}(\{x : \pi(x) \geq y\})$
+% 	\end{itemize}
+
+% 	Each conditional distribution is correct:
+% 	\begin{align}
+% 		p(y|x) & = \frac{1}{\pi(x)} \cdot \indicator\{0 \leq y \leq \pi(x)\} \\
+% 		p(x|y) & = \frac{1}{|S_y|} \cdot \indicator\{\pi(x) \geq y\}
+% 	\end{align}
+
+% 	\textbf{Why This Ensures Convergence:}
+% 	\begin{enumerate}
+% 		\item \textbf{Gibbs sampling preserves $\pi^*$:} Each conditional update leaves $\pi^*(x,y)$ invariant
+% 		\item \textbf{Marginalization:} $\int_0^\infty \pi^*(x,y)dy = \pi(x)/Z \propto \pi(x)$
+% 		\item \textbf{Detailed balance inherited:} Gibbs updates satisfy detailed balance by construction
+% 	\end{enumerate}
+
+% 	\begin{block}{Geometric Ergodicity (Bonus)}
+% 		Under mild conditions ($\pi$ log-concave or exponential tails):
+% 		$$\|P^n(x, \cdot) - \pi(\cdot)\|_{TV} \leq M(x)\rho^n, \quad \rho < 1$$
+% 	\end{block}
+
+% \end{frame}
+
+\begin{frame}{Various topics}
 	\begin{itemize}
-		\item \textbf{Step 1:} Sample $y | x \sim \text{Uniform}(0, \pi(x))$
-		\item \textbf{Step 2:} Sample $x | y \sim \text{Uniform}(\{x : \pi(x) \geq y\})$
+		\item How to choose initial width $w$?
+		\item Extensions to Multivariate Slice Sampling. Coordinate-wise: Apply one-dimensional slice sampling to
+each $x_i$ in turn. (Gibbs sampling)
+		\item Elliptical Slice Sampling for Gaussian priors (Murray et al., 2010)
 	\end{itemize}
-
-	Each conditional distribution is correct:
-	\begin{align}
-		p(y|x) & = \frac{1}{\pi(x)} \cdot \indicator\{0 \leq y \leq \pi(x)\} \\
-		p(x|y) & = \frac{1}{|S_y|} \cdot \indicator\{\pi(x) \geq y\}
-	\end{align}
-
-	\textbf{Why This Ensures Convergence:}
-	\begin{enumerate}
-		\item \textbf{Gibbs sampling preserves $\pi^*$:} Each conditional update leaves $\pi^*(x,y)$ invariant
-		\item \textbf{Marginalization:} $\int_0^\infty \pi^*(x,y)dy = \pi(x)/Z \propto \pi(x)$
-		\item \textbf{Detailed balance inherited:} Gibbs updates satisfy detailed balance by construction
-	\end{enumerate}
-
-	\begin{block}{Geometric Ergodicity (Bonus)}
-		Under mild conditions ($\pi$ log-concave or exponential tails):
-		$$\|P^n(x, \cdot) - \pi(\cdot)\|_{TV} \leq M(x)\rho^n, \quad \rho < 1$$
-	\end{block}
-
 \end{frame}
 
 \end{document}
