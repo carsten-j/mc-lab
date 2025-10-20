@@ -4,6 +4,17 @@
 \begin{document}
 
 \begin{frame}
+	\vspace{2cm}
+	\begin{center}
+		{\Huge\textbf{\textcolor{copenhagenred}{Unbiased MCMC}}}
+		\vspace{1cm}
+
+		\rule{4cm}{3pt}
+		\vspace{2cm}
+	\end{center}
+\end{frame}
+
+\begin{frame}
 	\frametitle{Unbiased MCMC}
 
 	\begin{itemize}
@@ -23,8 +34,6 @@
 	\frametitle{Unbiased MCMC}
 
 	\begin{itemize}
-		\item MCMC algorithms provide estimators that are \textcolor{red}{consistent} as the number of iterations grows large but \textcolor{red}{potentially biased} for any fixed number of iterations.
-
 		\item \textbf{Unbiased estimation using coupling} (Glynn and Rhee, 2014, Jacob et al., 2020 \& 2024)
 
 		      \begin{align*}
@@ -49,9 +58,9 @@
 \begin{frame}
 	\frametitle{Glynn--Rhee estimator - assumptions}
 	\begin{itemize}
-		\item \textbf{Assumption 1}:
-		\item \textbf{Assumption 2}:
-		\item \textbf{Assumption 3}:
+		\item \textbf{Assumption 1}: To ensure existence of moments
+		\item \textbf{Assumption 2}: This is the hardest to verify in practice. It requires the coupling to be efficient enough so that the meeting time has geometric tails
+		\item \textbf{Assumption 3}: This is often easy to ensure in practice by designing the coupling appropriately
 	\end{itemize}
 \end{frame}
 
@@ -77,17 +86,17 @@
 \begin{frame}
 	\frametitle{Example of Coupling: Maximal Coupling}
 	\begin{algorithm}[H]
-		\caption{Sampling a coupling of $p$ and $q$, with parameter $\eta \in (0, 1]$. The coupling maximizes $\mathbb{P}(X = Y)$ when $\eta = 1$, but the variance of the cost is bounded when $\eta < 1$.}
+		\caption{Sampling a coupling of $p$ and $q$. The coupling maximizes $\mathbb{P}(X = Y)$.}
 		\begin{algorithmic}[1]
 			\STATE Sample $X \sim p$.
-			\STATE Sample $W \sim \text{Uniform}(0, 1)$.
-			\IF {$W \leq \min(\eta, q(X)/p(X))$}
+			\STATE Sample $U \sim \text{Uniform}(0, 1)$.
+			\IF {$U \leq q(X)/p(X)$}
 			\STATE set $Y = X$.
 			\ELSE
 			\WHILE {true}
-			\STATE sample $Y^* \sim q$ and $W^* \sim \text{Uniform}(0, 1)$ until $W^* > \eta p(Y^*)/q(Y^*)$
+			\STATE sample $Y^* \sim q$ and $W^* \sim \text{Uniform}(0, 1)$ until $W^* > p(Y^*)/q(Y^*)$
 			\ENDWHILE
-			% \STATE set $Y = Y^*$.
+			\STATE set $Y = Y^*$.
 			\ENDIF
 			\STATE Return $(X, Y)$.
 		\end{algorithmic}
