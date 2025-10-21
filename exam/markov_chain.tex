@@ -38,6 +38,9 @@
         \pi(y) = \int \pi(x) P(x, y) dx.
     \end{equation*}
     Intuitively, if the chain starts with distribution $\pi$, it remains in distribution $\pi$ at all future times.
+
+    \vspace{0.5cm}
+    Time-homogeneous is not needed for invariant distribution. But it is often easier to verify in that case.
 \end{frame}
 
 \begin{frame}{Irreducible}
@@ -48,6 +51,34 @@
         P^n(x, y) > 0,
     \end{equation*}
     where $P^n(x, y)$ is the $n$-step transition probability from state $x$ to state $y$.
+\end{frame}
+
+\begin{frame}{Aperiodicity}
+    A Markov Chain is called \textbf{aperiodic} if it does not get trapped in cycles with fixed periods. Ensures actual convergence instead of oscillation.
+    Formally, for any state $x$, the greatest common divisor of the set of integers
+    \begin{equation*}
+        \{ n \geq 1 : P^n(x, x) > 0 \}
+    \end{equation*}
+    is 1.
+    \textbf{Note:} If all states have a non-zero probability of remaining in the same state, the chain is aperiodic.
+\end{frame}
+
+\begin{frame}{Positive recurrence}
+    A Markov Chain is called \textbf{positive recurrent} if, starting from any state, the expected return time to that state is finite. Formally, for any state $x$,
+    \begin{equation*}
+        \mathbb{E}[T_x | X_0 = x] < \infty,
+    \end{equation*}
+    where $T_x$ is the return time to state $x$.
+    \textbf{Note:} Positive recurrence ensures that the chain does not wander off to infinity and has a well-defined long-term behavior.
+\end{frame}
+
+\begin{frame}{More on recurrence}
+    \begin{itemize}
+        \item \textbf{Recurrent}: A Markov Chain is called recurrent if, starting from any state, the probability of returning to that state is 1.
+        \item \textbf{Positive recurrence:} A Markov Chain is called positive recurrent if it is recurrent and the expected return time to any state is finite, i.e. the chain returns quickly on average.
+        \item \textbf{Transient}:
+        \item \textbf{Null recurrence:} A Markov Chain is called null recurrent if it is recurrent but the expected return time to any state is infinite.
+    \end{itemize}
 \end{frame}
 
 \end{document}
