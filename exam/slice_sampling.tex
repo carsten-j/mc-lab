@@ -1,8 +1,3 @@
-% \documentclass[aspectratio=169]{beamer}
-% \usepackage{beamerstyle}
-
-% \begin{document}
-
 \begin{frame}
 	\vspace{2cm}
 	\begin{center}
@@ -20,13 +15,14 @@
 		avoids the need to tune hyperparameters. Introduced by Neal (2003).
 	\end{block}
 
-	The idea of slice sampling. Suppose we wish to sample from a distribution for a
-	variable, $x$, taking values in some subset of $R^n$ , whose density is proportional
-	to some function $f (x)$. We can do this by sampling uniformly from the
-	(n + 1)-dimensional region that lies under the plot of $f (x)$.
+	The idea of slice sampling. 
+	
+	Suppose we wish to sample from a density  for a
+	variable, $x$, taking values in some subset of $R^n$ . We can do this by sampling uniformly from the
+	(n + 1)-dimensional region that lies under the plot of the density function.
 \end{frame}
 
-\begin{frame}{Introduction}
+\begin{frame}{Joint and Marginal Distributions}
 	This idea can be
 	formalized by introducing an auxiliary real variable, $y$, and deﬁning a joint
 	distribution over $x$ and $y$ that is uniform over the region
@@ -34,10 +30,7 @@
 	by $f (x)$. That is, the joint density for $(x,y)$ is
 
 	\begin{equation*}
-		p(x,y) = \frac{1}{Z} \begin{cases}
-			1, & \text{if } 0 < y < f(x) \\
-			0, & \text{otherwise}
-		\end{cases}
+		p(x,y) = \frac{1}{Z} \mathbf{1}_{\{0 < y < f(x)\} } 
 	\end{equation*}
 
 	where $Z = \int f(x)dx$. The marginal density for $x$ is then
@@ -48,7 +41,7 @@
 	distribution $p(x,y)$, we can obtain samples from the marginal distribution $p(x)$.
 \end{frame}
 
-\begin{frame}{Intuition Behind Slice Sampling}
+\begin{frame}{The Slice Sampling Algorithm}
 	\begin{columns}[T]
 		\begin{column}{0.48\textwidth}
 			\textbf{Step 1: Vertical Slice}
@@ -59,10 +52,12 @@
 			\end{itemize}
 			\textbf{Step 2: Horizontal Slice}
 			\begin{itemize}
-				\item Sample new $x$ uniformly from slice
-				\item $S = \{x : \pi(x) \geq y\}$
-				\item Gives new sample from $\pi(x)$
-			\end{itemize}		\end{column}
+				\item Sample new $x$ uniformly from slice $S = \{x : \pi(x) \geq y\}$
+			\end{itemize}	
+			
+			\vspace{0.2cm}
+			The Challenge: In practice, sampling $S = \{ x : \pi ( x ) \geq y \}$ can be difficult!
+		\end{column}
 		\begin{column}{0.48\textwidth}
 			\begin{center}
 				\begin{tikzpicture}[scale=0.7]
@@ -78,26 +73,6 @@
 				By alternating between sampling $y|x$ and $x|y$, we create a Markov chain that explores the space under $\pi(x)$ uniformly, with marginal distribution for $x$ being exactly $\pi(x)$
 		\end{column}
 	\end{columns}
-\end{frame}
-
-\begin{frame}{The Slice Sampling Algorithm}
-	\begin{block}{Basic Algorithm}
-		\textbf{Given:} Current state $x_t$, target distribution $\pi(x)$
-	\end{block}
-	\begin{block}{Algorithm}
-		\begin{enumerate}
-			\item \textbf{Sample auxiliary variable:} Draw $y \sim \text{Uniform}(0, \pi(x_t))$
-			\item  \textbf{Find the slice:} Identify $S = \{x : \pi(x) \geq y\}$
-			\item  \textbf{Sample from the slice:} Draw $x_{t+1} \sim \text{Uniform}(S)$
-		\end{enumerate}
-	\end{block}
-
-	\vspace{0.3cm}
-	\textbf{The Challenge: Finding and Sampling from $S$}
-
-	In practice, finding $S = \{x : \pi(x) \geq y\}$ can be difficult!
-
-	\highlighttext{\textbf{Key Idea: Leave Distribution Invariant}}
 \end{frame}
 
 \begin{frame}{How to sample from $S$}
@@ -130,144 +105,46 @@
 	Alternative procedures exist for sampling from $S$ e.g., doubling.
 \end{frame}
 
+\begin{frame}{Reversibility and Detailed Balance}
 
-% \begin{frame}{Why $w$ is Not a Critical Tuning Parameter}
+	\textbf{The geometric intuition}: Even though the stepping-out starts from different locations,
+	both procedures ultimately sample uniformly from the same slice S, making the transitions symmetric.
 
-% 	\begin{block}{The Width Parameter $w$: Efficiency vs. Correctness}
-% 		Yes, $w$ IS technically a tuning parameter, BUT...
-% 	\end{block}
+	\vspace{0.3cm}
+	The conditional transition probability $T(x_0 \rightarrow x_1 | y)$ equals:
 
-% 	\begin{columns}[T]
-% 		\begin{column}{0.48\textwidth}
-% 			\textbf{Traditional MCMC (e.g., RW-Metropolis)}
-% 			\begin{itemize}
-% 				\item \textbf{Poor tuning $\rightarrow$ Poor mixing}
-% 				\item $\sigma$ too small $\rightarrow$ Tiny steps, stuck
-% 				\item $\sigma$ too large $\rightarrow$ High rejection
-% 				\item Can take exponentially long
-% 				\item \highlighttext{Affects correctness in finite time}
-% 			\end{itemize}
-% 		\end{column}
-% 		\begin{column}{0.48\textwidth}
-% 			\textbf{Slice Sampling with $w$}
-% 			\begin{itemize}
-% 				\item \textbf{Poor $w$ $\rightarrow$ More computation}
-% 				\item $w$ too small $\rightarrow$ Many step-outs
-% 				\item $w$ too large $\rightarrow$ More shrinking
-% 				\item Always finds correct slice
-% 				\item \highlighttext{Only affects efficiency}
-% 			\end{itemize}
-% 		\end{column}
-% 	\end{columns}
-% \end{frame}
+	$P(\text{sample}\: y \vert \text{at}\: x_0) \times P(\text{sample}\: x_1 | y, \text{starting from}\: x_0)=  [1/\pi(x_0)] \times [1/|S_y|]$
 
-% \begin{frame}{Why $w$ is Not a Critical Tuning Parameter}
-% 	\textbf{Why $w$ is Robust: The Self-Correcting Mechanism}
+	Similarly, the conditional transition probability $T(x_1 \rightarrow x_0 | y)$ equals: $[1/\pi(x_1)] \times [1/|S_y|]$
 
-% 	\begin{columns}[T]
-% 		\begin{column}{0.48\textwidth}
-% 			\textbf{Case 1: $w \ll$ typical slice width}
-% 			\begin{itemize}
-% 				\item Initial $[L, R]$ doesn't cover slice
-% 				\item Stepping-out expands it
-% 				\item $\checkmark$ Still finds correct slice!
-% 			\end{itemize}
-% 		\end{column}
-% 		\begin{column}{0.48\textwidth}
-% 			\textbf{Case 2: $w \gg$ typical slice width}
-% 			\begin{itemize}
-% 				\item Initial $[L, R]$ too wide
-% 				\item Shrinking contracts it
-% 				\item $\checkmark$ Still samples correctly!
-% 			\end{itemize}
-% 		\end{column}
-% 	\end{columns}
+	For detailed balance, we need to show that:
+	$$\pi(x_0) \cdot T(x_0 \rightarrow x_1) = \pi(x_1) \cdot T(x_1 \rightarrow x_0)$$
 
-% 	\begin{block}{Mathematical Guarantee}
-% 		For ANY $w > 0$:
-% 		\begin{itemize}
-% 			\item The stationary distribution is ALWAYS $\pi(x)$
-% 			\item Detailed balance is satisfied
-% 			\item Convergence is guaranteed
-% 		\end{itemize}
-% 	\end{block}
+	% \begin{block}{1. Detailed Balance}
+	% 	Let $T(x'|x)$ be the transition kernel. We need: $\pi(x) \cdot T(x'|x) = \pi(x') \cdot T(x|x')$
+	% \end{block}
 
-% 	\begin{alertblock}{Key Distinction}
-% 		In slice sampling, $w$ affects ``how many function evaluations per sample'' not ``whether we get correct samples''
-% 	\end{alertblock}
-% \end{frame}
+	The full kernel is obtained by integrating over all possible $y$:
+	$$T(x_0 \rightarrow x_1) = \int_0^{\min(\pi(x_0),\pi(x_1))} \frac{1}{\pi(x_0)} \cdot \frac{1}{|S_y|} dy$$
 
-\begin{frame}{Why Slice Sampling Converges}
-
-	\textbf{Formal Convergence Properties}
-
-	\begin{block}{1. Detailed Balance}
-		Let $T(x'|x)$ be the transition kernel. We need: $\pi(x) \cdot T(x'|x) = \pi(x') \cdot T(x|x')$
-	\end{block}
-
-	\textbf{Proof sketch:}
-	\begin{itemize}
-		\item Given $x$, sample $y \sim \text{Uniform}(0, \pi(x))$
-		\item Probability density of moving from $x$ to $x'$:
-		      $$T(x'|x) = \int_0^{\min(\pi(x),\pi(x'))} \frac{1}{\pi(x)} \cdot \frac{1}{|S_y|} dy$$
-		      where $|S_y|$ is the length of slice $\{z : \pi(z) \geq y\}$
-		\item This is symmetric: $T(x'|x) = T(x|x')$ $\Rightarrow$ detailed balance holds
-	\end{itemize}
 \end{frame}
 
 \begin{frame}{Convergence - Continued}
-
-	\begin{block}{2. Irreducibility}
-		For any $x, x'$ where $\pi(x) > 0$ and $\pi(x') > 0$:
-		$$P(x \to x') \geq \int_0^{\min(\pi(x),\pi(x'))} \frac{1}{\pi(x)} \cdot P(x' \text{ sampled from } S_y) dy > 0$$
+	\begin{block}{Irreducibility}
+		No matter where we start, there's always a positive probability of sampling a
+		very small $y$ value, which creates a very large slice that can connect distant
+		parts of the state space, i.e. the slice is allmost the entire support of $\pi(x)$.
 	\end{block}
 
-	\begin{block}{3. Aperiodicity}
+	\begin{block}{Aperiodicity}
 		$P(x \to x) > 0$ (can stay at current state) $\Rightarrow$ period = 1
 	\end{block}
 
-	\begin{alertblock}{Ergodic Theorem}
-		Since the chain is irreducible, aperiodic, with stationary distribution $\pi(x)$:
-		$$\lim_{n\to\infty} \|P(X_n \in \cdot | X_0 = x_0) - \pi(\cdot)\|_{TV} = 0$$
-	\end{alertblock}
+	\begin{block}{Ergodic Theorem}
+		Since the chain is detailed balanced, irreducible and aperiodic,
+		it has convergence with stationary distribution $\pi(x)$:
+	\end{block}
 \end{frame}
-
-
-% \begin{frame}{Convergence: Additional Mathematical Details}
-
-% 	\begin{block}{Detailed Balance - Complete Argument}
-% 		Consider augmented state space $(x, y)$ with invariant distribution:
-% 		$$\pi^*(x, y) = \frac{1}{Z} \cdot \indicator\{0 \leq y \leq \pi(x)\}$$
-% 		where $Z = \int \pi(x)dx$ is the normalization constant.
-% 	\end{block}
-
-% 	\textbf{The Gibbs Sampler View}
-
-% 	Slice sampling is a Gibbs sampler on the augmented space:
-% 	\begin{itemize}
-% 		\item \textbf{Step 1:} Sample $y | x \sim \text{Uniform}(0, \pi(x))$
-% 		\item \textbf{Step 2:} Sample $x | y \sim \text{Uniform}(\{x : \pi(x) \geq y\})$
-% 	\end{itemize}
-
-% 	Each conditional distribution is correct:
-% 	\begin{align}
-% 		p(y|x) & = \frac{1}{\pi(x)} \cdot \indicator\{0 \leq y \leq \pi(x)\} \\
-% 		p(x|y) & = \frac{1}{|S_y|} \cdot \indicator\{\pi(x) \geq y\}
-% 	\end{align}
-
-% 	\textbf{Why This Ensures Convergence:}
-% 	\begin{enumerate}
-% 		\item \textbf{Gibbs sampling preserves $\pi^*$:} Each conditional update leaves $\pi^*(x,y)$ invariant
-% 		\item \textbf{Marginalization:} $\int_0^\infty \pi^*(x,y)dy = \pi(x)/Z \propto \pi(x)$
-% 		\item \textbf{Detailed balance inherited:} Gibbs updates satisfy detailed balance by construction
-% 	\end{enumerate}
-
-% 	\begin{block}{Geometric Ergodicity (Bonus)}
-% 		Under mild conditions ($\pi$ log-concave or exponential tails):
-% 		$$\|P^n(x, \cdot) - \pi(\cdot)\|_{TV} \leq M(x)\rho^n, \quad \rho < 1$$
-% 	\end{block}
-
-% \end{frame}
 
 \begin{frame}{Various topics}
 	\begin{itemize}
@@ -275,7 +152,7 @@
 		\item Extensions to Multivariate Slice Sampling. Coordinate-wise: Apply one-dimensional slice sampling to
 each $x_i$ in turn. (Gibbs sampling)
 		\item Elliptical Slice Sampling for Gaussian priors (Murray et al., 2010)
+		\item $\pi ( x ) \propto N ( x | 0, \sigma^2 ) L ( x )$
+		\item sample from prior and construct ellipse where the density on the ellipse is proportional to the likelihood
 	\end{itemize}
 \end{frame}
-
-% \end{document}

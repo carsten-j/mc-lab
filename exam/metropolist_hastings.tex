@@ -1,13 +1,7 @@
-% \documentclass[aspectratio=169]{beamer}
-% \usepackage{beamerstyle}
-
-% \begin{document}
-
-% Title slide
 \begin{frame}
 	\vspace{2cm}
 	\begin{center}
-		{\Huge\textbf{\textcolor{copenhagenred}{Rejection Sampling}}}
+		{\Huge\textbf{\textcolor{copenhagenred}{Metropolis-Hastings}}}
 		\vspace{1cm}
 
 		\rule{4cm}{3pt}
@@ -15,95 +9,94 @@
 	\end{center}
 \end{frame}
 
+\begin{frame}{MCMC algorithm}
+	\begin{itemize}
+		\item Goal: generate samples from a target distribution $\pi$ on state space $\mathbb{X}$.
+		\item Idea: construct a Markov chain $\{X^{(t)}\}_{t \geq 1}$ with invariant distribution $\pi$.
+		\item After an initial burn-in period, the samples $X^{(t)}$ can be treated as approximate
+		samples from $\pi$.
+		\item Metropolis-Hastings is a general MCMC algorithm that uses a proposal distribution
+		to suggest new states and an acceptance-rejection mechanism to ensure the correct
+		invariant distribution.
+	\end{itemize}
+\end{frame}
 
 \begin{frame}{Metropolis-Hastings Algorithm}
 	\begin{itemize}
 		\item Target distribution on $\mathbb{X} = \mathbb{R}^d$ of density $\pi(x)$.
-		\item Proposal distribution: for any $x, x' \in \mathbb{X}$, we have $q(x'|x) \geq 0$ and $\int_{\mathbb{X}} q(x'|x) \, dx' = 1$.
-
-
+		\item Proposal distribution: for any $x, x' \in \mathbb{X}$,
+		we have $q(x'|x) \geq 0$ and $\int_{\mathbb{X}} q(x'|x) \, dx' = 1$.
+		\item Starting with $X^{(1)}$, for $t = 2, 3, \ldots$
 	\end{itemize}
 	\begin{block}{Algorithm}
 		\begin{enumerate}
-			\item Starting with $X^{(1)}$, for $t = 2, 3, \ldots$
 			\item Sample $X^{\star} \sim q(\cdot | X^{(t-1)})$.
 			\item Compute $\alpha(X^{\star} | X^{(t-1)}) = \min\left(1, \frac{\pi(X^{\star}) q(X^{(t-1)} | X^{\star})}{\pi(X^{(t-1)}) q(X^{\star} | X^{(t-1)})}\right).$
-			\item Sample $U \sim \mathcal{U}_{[0,1]}$. If $U \leq \alpha(X^{\star} | X^{(t-1)})$, set $X^{(t)} = X^{\star}$, otherwise set $X^{(t)} = X^{(t-1)}$.
+			\item Sample $U \sim \mathcal{U}_{[0,1]}$. If $U \leq \alpha(X^{\star} | X^{(t-1)})$,
+			set $X^{(t)} = X^{\star}$, otherwise set $X^{(t)} = X^{(t-1)}$.
 		\end{enumerate}
 	\end{block}
 \end{frame}
 
-\begin{frame}{Metropolis-Hastings Algorithm}
+\begin{frame}{Role of Acceptance Probability}
 	\begin{itemize}
-		\item The proposal distribution $q$ can be chosen quite freely, but it should be easy to sample from and to evaluate.
-		\item The acceptance probability $\alpha(x'|x)$ ensures that the chain has $\pi$ as its stationary distribution.
-		\item If $q$ is symmetric, i.e., $q(x'|x) = q(x|x')$, then the acceptance probability simplifies to $\alpha(x'|x) = \min\left(1, \frac{\pi(x')}{\pi(x)}\right)$. This is also known as Metropolist Random Walk.
-		\item If $q$ does not depend on the current state, i.e., $q(x'|x) = q(x')$, then the algorithm reduces to the Independent Metropolis-Hastings algorithm.
-		\item The choice of $q$ affects the efficiency of the algorithm. A poorly chosen $q$ can lead to slow mixing and high autocorrelation in the samples.
-	\end{itemize}
-\end{frame}
-
-\begin{frame}{Role of $\alpha(X^{\star} | X^{(t-1)})$}
-	\begin{itemize}
-		\item The acceptance probability $\alpha(X^{\star} | X^{(t-1)})$ is crucial for ensuring that the Markov chain has the desired stationary distribution $\pi$.
-		\item It corrects for the discrepancy between the proposal distribution $q$ and the target distribution $\pi$.
-		\item If the proposed state $X^{\star}$ has a higher density under $\pi$ than the current state $X^{(t-1)}$, it is always accepted ($\alpha = 1$).
-		\item If $X^{\star}$ has a lower density, it may still be accepted with a probability proportional to the ratio of densities, allowing exploration of the state space.
-		\item This mechanism helps to avoid getting stuck in local modes and promotes better mixing of the chain.
-	\end{itemize}
-\end{frame}
-
-\begin{frame}{Role of $\alpha(X^{\star} | X^{(t-1)})$}
-	\begin{itemize}
-		\item If $\pi(x^*) > \pi(x)$, then the proposed state has higher probability than current state which favors acceptance
-		\item If $\pi(x^*) < \pi(x)$, then the proposed state has lower probability than current state which favors rejection
-		\item Intuition: want to spend time in high-probability regions, so moves towards them should be favored
-		\item Reverse proposal ratio: how easy is it to propose reverse move compared to forward move?
-		\item Intuition: if proposal mechanism makes it easy to reacg certain states,
-		      we need to be more selective accepting such moves. otherwise the chain will be
-		      biased towards such easy-to-propos-to regions rather than high probability regions
+		\item The acceptance probability $\alpha(X^{\star} | X^{(t-1)})$ is crucial for ensuring 
+		that the Markov chain has the desired stationary distribution $\pi$.
+		\item It corrects for the discrepancy between the proposal distribution $q$ and
+		the target distribution $\pi$.
+		\item If the proposed state $X^{\star}$ has a higher density than the current state $X^{(t-1)}$, 
+		then it favors acceptance but doesn't guarantee it.\footnote{In case the proposal is symmetric e.g RWM it will always be accepted.}
+		\item This mechanism helps to avoid getting stuck in local modes.
+		\item Reverse proposal ratio: how easy is it to propose reverse move compared to forward move? If proposal mechanism makes it easy to reach certain states, we need to be more selective accepting such moves, otherwise the chain will be biased towards such easy-to-propose-to regions rather than high probability regions.
 	\end{itemize}
 \end{frame}
 
 \begin{frame}{Transition Kernel}
-	\begin{block}{Lemma}
-		The kernel of the Metropolis--Hastings algorithm is given by
-		\[
-			K(x, y) = \alpha(y \mid x)q(y \mid x) + (1 - a(x))\delta_x(y).
-		\]
+	\begin{block}{Kernel for Metropolis--Hastings algorithm }
+		$K(x, y) = \alpha(y \mid x)q(y \mid x) + (1 - a(x))\delta_x(y)$ where $a$ is the average acceptance 
+		
+		\vspace{0.2cm}
+		probability from the current state. That is, $a(x) = \int q(x^* \mid x)\alpha(x^* \mid x)\,dx^*$
 	\end{block}
-
 	Proof:
-	We have
 	\begin{align*}
 		K(x,y)
-		 & = \int q(x^* \mid x)\{\alpha(x^* \mid x)\delta_{x^*}(y) + (1 - \alpha(x^* \mid x))\delta_x(y)\}\,dx^*      \\
-		 & = q(y \mid x)\alpha(y \mid x) + \left\{\int q(x^* \mid x)(1 - \alpha(x^* \mid x))\,dx^*\right\}\delta_x(y) \\
-		 & = q(y \mid x)\alpha(y \mid x) + \left\{1 - \int q(x^* \mid x)\alpha(x^* \mid x)\,dx^*\right\}\delta_x(y)   \\
+		 & = \int q(x^* \mid x)\Big\{\alpha(x^* \mid x)\delta_{x^*}(y) + (1 - \alpha(x^* \mid x))\delta_x(y)\Big\}\,dx^*  \\
+		 & = q(y \mid x)\alpha(y \mid x) + \left\{\int q(x^* \mid x)(1 - \alpha(x^* \mid x))\,dx^*\right\}\delta_x(y)     \\
+		 & = q(y \mid x)\alpha(y \mid x) + \left\{1 - \int q(x^* \mid x)\alpha(x^* \mid x)\,dx^*\right\}\delta_x(y)       \\
 		 & = q(y \mid x)\alpha(y \mid x) + \{1 - a(x)\}\delta_x(y).
 	\end{align*}
-
+	{\tiny if we accept we move to $x^*$ so $y=x^*$ and $\delta_{x^*}(y)=1$. If we reject we stay at $x$ so $y=x$ and $\delta_x(y)=1$.}
 \end{frame}
 
 \begin{frame}{Reversibility}
 	\begin{block}{Proposition}
-		The Metropolis--Hastings kernel $K$ is $\pi$-reversible and thus admits $\pi$ as invariant distribution.
+		The Metropolis--Hastings kernel $K$ is $\pi$-reversible (i.e., $\pi(x)K(x, y)  =\pi(y) K(y, x) $) and 
+		thus admits $\pi$ as invariant distribution.
 	\end{block}
 
 	Proof:
-	For any $x, y \in \mathbb{X}$, with $x \neq y$
-
-	\begin{align*}
+	If $x = y$, then obviously $\pi(x)K(x, y) = \pi(y)K(y, x)$. For any $x \neq y$
+	\begin{align}
 		\pi(x)K(x, y) & = \pi(x)q(y \mid x)\alpha(y \mid x)                                                                    \\
 		              & = \pi(x)q(y \mid x) \left(1 \wedge \frac{\pi(y)q(x \mid y)}{\pi(x)q(y \mid x)}\right)                  \\
-		              & = \left(\pi(x)q(y \mid x) \wedge \pi(y)q(x \mid y)\right)                                              \\
+		              & = \pi(x)q(y \mid x) \wedge \pi(y)q(x \mid y)                                                           \\
 		              & = \pi(y)q(x \mid y) \left(\frac{\pi(x)q(y \mid x)}{\pi(y)q(x \mid y)} \wedge 1\right) = \pi(y)K(y, x).
-	\end{align*}
-
-	If $x = y$, then obviously $\pi(x)K(x, y) = \pi(y)K(y, x)$.
-
+	\end{align}
+	{\tiny 1: kernel definition, 2: acceptance probability definition, 3: symmetry of min operation, 4: algebraic rearrangement.}
 \end{frame}
 
-% \end{document}
+\begin{frame}{Metropolis-Hastings Algorithm}
 
+	\textbf{Convergence}: We also need irreducibility and aperiodicity to ensure convergence to $\pi$.
 
+	\vspace{1cm}
+	\textbf{RWM}: If $q$ is symmetric, i.e., $q(x'|x) = q(x|x')$, then the acceptance probability 
+	simplifies to $\alpha(x'|x) = \min\left(1, \frac{\pi(x')}{\pi(x)}\right)$. 
+	This is also known as Random Walk Metropolis.
+
+	\vspace{1cm}
+	\textbf{Independent MH}: If $q$ does not depend on the current state, 
+	i.e., $q(x'|x) = q(x')$, then the algorithm reduces to the 
+	Independent Metropolis-Hastings algorithm.
+\end{frame}
