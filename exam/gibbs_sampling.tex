@@ -1,0 +1,98 @@
+\begin{frame}
+	\vspace{2cm}
+	\begin{center}
+		{\Huge\textbf{\textcolor{copenhagenred}{Gibbs Sampling}}}
+		\vspace{1cm}
+
+		\rule{4cm}{3pt}
+		\vspace{2cm}
+	\end{center}
+\end{frame}
+
+\begin{frame}{Gibbs Sampling Algorithm}
+    \begin{algorithm}[H]
+        \caption{2D Gibbs Sampler with Systematic Scan}
+        \begin{algorithmic}[1]
+            \REQUIRE Target conditionals $\pi(x|y)$ and $\pi(y|x)$, number of iterations $N$, initial values $(x^{(0)}, y^{(0)})$
+            \ENSURE Sequence of samples $\{(x^{(t)}, y^{(t)})\}_{t=1}^N$
+            \STATE Initialize $t \leftarrow 0$
+            \STATE Set starting values $(x^{(0)}, y^{(0)})$
+            \FOR{$t = 1$ to $N$}
+                \STATE Sample $x^{(t)} \sim \pi(x | y^{(t-1)})$
+                \STATE Sample $y^{(t)} \sim \pi(y | x^{(t)})$
+                \STATE Store $(x^{(t)}, y^{(t)})$
+            \ENDFOR
+            \RETURN $\{(x^{(t)}, y^{(t)})\}_{t=1}^N$
+        \end{algorithmic}
+    \end{algorithm}
+\end{frame}
+
+
+% \begin{frame}{Gibbs Sampling Algorithm}
+%     \begin{algorithm}[H]
+%         \caption{2D Gibbs Sampler with Random Scan}
+%         \begin{algorithmic}[1]
+%             \REQUIRE Target conditionals $\pi(x|y)$ and $\pi(y|x)$, number of iterations $N$, initial values $(x^{(0)}, y^{(0)})$
+%             \ENSURE Sequence of samples $\{(x^{(t)}, y^{(t)})\}_{t=1}^N$
+%             \STATE Initialize $t \leftarrow 0$
+%             \STATE Set starting values $(x^{(0)}, y^{(0)})$
+%             \FOR{$t = 1$ to $N$}
+%                 \STATE Set $(x^{(t)}, y^{(t)}) \leftarrow (x^{(t-1)}, y^{(t-1)})$
+%                 \STATE Sample $j \sim \text{Uniform}\{1, 2\}$
+%                 \IF{$j = 1$}
+%                     \STATE Sample $x^{(t)} \sim \pi(x | y^{(t)})$
+%                 \ELSE
+%                     \STATE Sample $y^{(t)} \sim \pi(y | x^{(t)})$
+%                 \ENDIF
+%                 \STATE Store $(x^{(t)}, y^{(t)})$
+%             \ENDFOR
+%             \RETURN $\{(x^{(t)}, y^{(t)})\}_{t=1}^N$
+%         \end{algorithmic}
+%     \end{algorithm}
+% \end{frame}
+
+\begin{frame}{Transition Kernel of Gibbs Sampler}
+    The transition kernel for a 2D systematic Gibbs sampler from state $(x,y)$ to state $(x',y')$ is:
+
+    \begin{equation*}
+        K((x,y), (x',y')) = \pi(x'|y) \cdot \pi(y'|x')
+    \end{equation*}
+
+    This represents the composition of two steps:
+    \begin{enumerate}
+        \item Sample $x' \sim \pi(x|y)$ (transition from $(x,y)$ to $(x',y)$)
+        \item Sample $y' \sim \pi(y|x')$ (transition from $(x',y)$ to $(x',y')$)
+    \end{enumerate}
+
+    \vspace{0.5cm}
+    The kernel is the product of these conditional probabilities since the updates are performed sequentially within each iteration.
+\end{frame}
+
+\begin{frame}
+To show that $\pi$ is invariant under $K$, we need to verify:
+\begin{equation}
+\pi(x',y') = \int \int \pi(x,y) \, K((x,y), (x',y')) \, dx \, dy
+\end{equation}
+
+Substituting the kernel:
+\begin{align}
+\int \int \pi(x,y) \, K((x,y), (x',y')) \, dx \, dy &= \int \int \pi(x,y) \, \pi(x'|y) \, \pi(y'|x') \, dx \, dy
+\end{align}
+
+Using the fact that $\pi(x,y) = \pi(y) \pi(x|y)$:
+\begin{align}
+&= \int \int \pi(y) \, \pi(x|y) \, \pi(x'|y) \, \pi(y'|x') \, dx \, dy\\
+&= \int \pi(y) \, \pi(x'|y) \, \pi(y'|x') \left[ \int \pi(x|y) \, dx \right] dy\\
+&= \int \pi(y) \, \pi(x'|y) \, \pi(y'|x') \, dy
+\end{align}
+
+Since $\pi(y) \pi(x'|y) = \pi(x',y) = \pi(x') \pi(y|x')$:
+\begin{align}
+&= \int \pi(x') \, \pi(y|x') \, \pi(y'|x') \, dy\\
+&= \pi(x') \, \pi(y'|x') \int \pi(y|x') \, dy\\
+&= \pi(x') \, \pi(y'|x')\\
+&= \pi(x',y')
+\end{align}
+
+Therefore, $\pi$ is the invariant distribution of the kernel $K$.
+\end{frame}
