@@ -9,234 +9,126 @@
 	\end{center}
 \end{frame}
 
+\begin{frame}{Gibbs Sampling - 2D Case}
+	Gibbs sampling is a Markov chain Monte Carlo (MCMC) algorithm used to sample from a
+	multivariate probability distribution when direct sampling is challenging. It does so by
+	iteratively sampling from the conditional distributions of each variable given the others.
+	Assume we are interested in sampling from the joint distribution $\pi(x_1, x_2), x \in \mathbb{R}^2$
 
-\begin{frame}{Gibbs Sampling with Systematic Scan Algorithm - 2d Case}
-    Gibbs sampling is a Markov chain Monte Carlo (MCMC) algorithm used to sample from a
-    multivariate probability distribution when direct sampling is challenging. It does so by
-    iteratively sampling from the conditional distributions of each variable given the others.
+	\vspace{0.4cm}
+	\textbf{Systematic Scan Algorithm}: Let $\left(X_1^{(1)}, X_2^{(1)}\right)$ be the initial state then iterate for $t = 2, 3, ...$
 
-    Assume we are interested in sampling from the joint distribution
-    \[
-    \pi(x) = \pi(x_1, x_2), \quad x \in \mathbb{R}^2.
-    \]
-
-    \textbf{Algorithm}: Let $\left(X_1^{(1)}, X_2^{(1)}\right)$ be the initial state then iterate for $t = 2, 3, ...$
-
-    \begin{enumerate}
-        \item Sample $X_1^{(t)} \sim \pi_{X_1|X_2}\left(\cdot | X_2^{(t-1)}\right)$
-        \item Sample $X_2^{(t)} \sim \pi_{X_2|X_1}\left(\cdot | X_1^{(t)}\right)$
-\end{enumerate}
-
+	\begin{enumerate}
+		\item Sample $X_1^{(t)} \sim \pi_{X_1|X_2}\left(\cdot | X_2^{(t-1)}\right)$
+		\item Sample $X_2^{(t)} \sim \pi_{X_2|X_1}\left(\cdot | X_1^{(t)}\right)$
+	\end{enumerate}
 \end{frame}
 
-% \begin{frame}{Gibbs Sampling Algorithm}
-%     \begin{algorithm}[H]
-%         \caption{2D Gibbs Sampler with Systematic Scan}
-%         \begin{algorithmic}[1]
-%             \REQUIRE Target conditionals $\pi(x|y)$ and $\pi(y|x)$, number of iterations $N$, initial values $(x^{(0)}, y^{(0)})$
-%             \ENSURE Sequence of samples $\{(x^{(t)}, y^{(t)})\}_{t=1}^N$
-%             \STATE Initialize $t \leftarrow 0$
-%             \STATE Set starting values $(x^{(0)}, y^{(0)})$
-%             \FOR{$t = 1$ to $N$}
-%                 \STATE Sample $x^{(t)} \sim \pi(x | y^{(t-1)})$
-%                 \STATE Sample $y^{(t)} \sim \pi(y | x^{(t)})$
-%                 \STATE Store $(x^{(t)}, y^{(t)})$
-%             \ENDFOR
-%             \RETURN $\{(x^{(t)}, y^{(t)})\}_{t=1}^N$
-%         \end{algorithmic}
-%     \end{algorithm}
-% \end{frame}
-
 \begin{frame}{Questions?}
-    Looking at the algorithm it is not immediately obvious that the target 
-    distribution $\pi$ is indeed the stationary distribution of the Markov 
-    chain defined by the Gibbs sampler. 
+	Looking at the algorithm it is not immediately obvious that the target
+	distribution $\pi$ is indeed the stationary distribution of the Markov
+	chain defined by the Gibbs sampler.
 
-    \begin{itemize}
-        \item Is the joint distribution uniquely specified by the conditional distributions?
-        \item Does the Gibbs sampler provide a Markov chain with the correct stationary distribution?
-        \item If yes, does the Markov chain converge towards this invariant distribution?
-    \end{itemize}
+	\begin{itemize}
+		\item Is the joint distribution uniquely specified by the conditional distributions?
+		\item Does the Gibbs sampler provide a Markov chain with the correct stationary distribution?
+		% \item If yes, does the Markov chain converge towards this invariant distribution?
+	\end{itemize}
 \end{frame}
 
 \begin{frame}
+	\begin{block}{The Hammersley-Clifford Theorem}
+		Under the \alert{positivity condition}, that is Support of joint = Cartesian product
+		of marginal supports, then the full conditional distributions
+		\textit{uniquely} determine the joint distribution. Then for any $(z_1, z_2)$ in the support
+		of $\pi$ (meaning $\pi(z_1, z_2) > 0$), we have for $d=2$:
 
-\begin{block}{The Hammersley-Clifford Theorem (1970)}
-\textbf{Key Result:} Under the \alert{positivity condition}, the full conditional distributions \textit{uniquely} determine the joint distribution.
+		\vspace{0.2cm}
+		$$\pi(x_1, x_2) \propto \frac{\pi_{X_1|X_2}(x_1|z_2)}{\pi_{X_1|X_2}(z_1|z_2)} \cdot \frac{\pi_{X_2|X_1}(x_2|x_1)}{\pi_{X_2|X_1}(z_2|x_1)}$$
+	\end{block}
 
-\vspace{0.2cm}
-For $d=2$: $\displaystyle \pi(x_1, x_2) \propto \frac{\pi_{X_1|X_2}(x_1|x_2)}{\pi_{X_1|X_2}(z_1|x_2)} \cdot \frac{\pi_{X_2|X_1}(x_2|x_1)}{\pi_{X_2|X_1}(z_2|x_1)}$
-\end{block}
+	\vspace{0.3cm}
 
-\vspace{0.3cm}
-
-\begin{columns}[t]
-\begin{column}{0.48\textwidth}
-\textbf{Positivity Condition:}
-\begin{itemize}
-    \item Support of joint = Cartesian product of marginal supports
-    \item If $\pi_{X_i}(x_i) > 0$ for all $i$, then $\pi(x_1,\ldots,x_d) > 0$
-\end{itemize}
-
-\vspace{0.2cm}
-
-\textbf{Warning:} Not all conditionals are compatible!
-
-\end{column}
-
-\begin{column}{0.48\textwidth}
-\textbf{Connection to Gibbs Sampling:}
-\begin{enumerate}
-    \item \textbf{Validates the method:} Alternating sampling from full conditionals targets the correct joint distribution
-    \item \textbf{Guarantees uniqueness:} When positivity holds, we know \textit{which} distribution we're sampling from
-    \item \textbf{Ensures convergence:} The Markov chain has $\pi$ as its stationary distribution
-\end{enumerate}
-
-\vspace{0.2cm}
-
-\textbf{Gibbs Sampler (Systematic Scan):}
-\begin{itemize}
-    \item Initialize: $X^{(0)} = (x_1^{(0)}, \ldots, x_d^{(0)})$
-    \item For $t = 1, 2, 3, \ldots$
-    \begin{itemize}
-        \item Sample $x_1^{(t)} \sim \pi(x_1 | x_2^{(t-1)}, \ldots, x_d^{(t-1)})$
-        \item Sample $x_2^{(t)} \sim \pi(x_2 | x_1^{(t)}, x_3^{(t-1)}, \ldots, x_d^{(t-1)})$
-        \item $\vdots$
-        \item Sample $x_d^{(t)} \sim \pi(x_d | x_1^{(t)}, \ldots, x_{d-1}^{(t)})$
-    \end{itemize}
-\end{itemize}
-\end{column}
-\end{columns}
+	\textbf{Connection to Gibbs Sampling:}
+	\begin{enumerate}
+		\item \textbf{Validates the method:} Alternating sampling from full conditionals targets the correct joint distribution
+		\item \textbf{Guarantees uniqueness:} When positivity holds, we know \textit{which} distribution we're sampling from
+		\item \textbf{Ensures convergence:} The Markov chain has $\pi$ as its stationary distribution
+	\end{enumerate}
 \end{frame}
 
-
-
-% \begin{frame}{Gibbs Sampling Algorithm}
-%     \begin{algorithm}[H]
-%         \caption{2D Gibbs Sampler with Random Scan}
-%         \begin{algorithmic}[1]
-%             \REQUIRE Target conditionals $\pi(x|y)$ and $\pi(y|x)$, number of iterations $N$, initial values $(x^{(0)}, y^{(0)})$
-%             \ENSURE Sequence of samples $\{(x^{(t)}, y^{(t)})\}_{t=1}^N$
-%             \STATE Initialize $t \leftarrow 0$
-%             \STATE Set starting values $(x^{(0)}, y^{(0)})$
-%             \FOR{$t = 1$ to $N$}
-%                 \STATE Set $(x^{(t)}, y^{(t)}) \leftarrow (x^{(t-1)}, y^{(t-1)})$
-%                 \STATE Sample $j \sim \text{Uniform}\{1, 2\}$
-%                 \IF{$j = 1$}
-%                     \STATE Sample $x^{(t)} \sim \pi(x | y^{(t)})$
-%                 \ELSE
-%                     \STATE Sample $y^{(t)} \sim \pi(y | x^{(t)})$
-%                 \ENDIF
-%                 \STATE Store $(x^{(t)}, y^{(t)})$
-%             \ENDFOR
-%             \RETURN $\{(x^{(t)}, y^{(t)})\}_{t=1}^N$
-%         \end{algorithmic}
-%     \end{algorithm}
-% \end{frame}
-
 \begin{frame}{Transition Kernel of Gibbs Sampler}
-    The transition kernel for a 2D systematic Gibbs sampler from state $x^{t-1}$ to state $x^{t}$ is:
+	The transition kernel for a 2D systematic Gibbs sampler from state
+	$x^{(t-1)}$ to state $x^{(t)}$ is:
 
-    \begin{equation*}
-        K(x^{t-1}, x^{t}) = \pi_{X_1|X_2} (x_1^{(t)}|x_2^{(t-1)}) \cdot \pi_{X_2|X_1}(x_2^{(t)}|x_1^{(t)})
-    \end{equation*}
+	\begin{equation*}
+		K(x^{(t-1)}, x^{(t)}) = \pi_{X_1|X_2} (x_1^{(t)}|x_2^{(t-1)}) \cdot \pi_{X_2|X_1}(x_2^{(t)}|x_1^{(t)})
+	\end{equation*}
 
-    \vspace{0.5cm}
-    This represents the composition of two steps:
-    \begin{enumerate}
-        \item transition from $(x^{t-1},y^{t-1})$ to $(x^{t},y^{t-1})$
-        \item transition from $(x^{t},y^{t-1})$ to $(x^{t},y^{t})$
-    \end{enumerate}
+	\vspace{0.5cm}
+	This represents the composition of two steps:
+	\begin{enumerate}
+		\item transition from $(x_1^{(t-1)},x_2^{(t-1)})$ to $(x_1^{(t)},x_2^{(t-1)})$
+		\item and then from $(x_1^{(t)},x_2^{(t-1)})$ to $(x_1^{(t)},x_2^{(t)})$
+	\end{enumerate}
 
-    \vspace{0.5cm}
-    The kernel is the product of these conditional probabilities since the updates are performed sequentially within each iteration.
+	\vspace{0.5cm}
+	The kernel is the product of these conditional probabilities since the updates are performed sequentially within each iteration.
 \end{frame}
 
 \begin{frame}{Invariance of the Target Distribution }
-    Proof: $d=2$ for points $(x_1,y_1)$ and $(x_2,y_2)$.
+	Proof: $d=2$ for points $x=(x_1,x_2)$ and $y=(y_1,y_2)$.
 
-    \begin{align}
-    \int K((x_1,y_1) \to (x_2,y_2))\pi(x_1,y_1)dx_1 dy_1 &= \int \pi(x_2 | y_1)\pi(y_2 | x_2)\pi(x_1, y_1)dx_1 dy_1 \\
-    &= \int \pi(x_2 | y_1)\pi(y_2 | x_2)\pi(y_1)dy_1 \\
-    &= \pi(y_2 | x_2) \int \pi(x_2 | y_1)\pi(y_1)dy_1 \\
-    &= \pi(y_2 | x_2)\pi(x_2) \\
-    &= \pi(x_2, y_2) \quad
-    \end{align}
+	\begin{align}
+		\int K(x,y) \pi(x)dx & = \int \pi(y_2 | y_1)\pi(y_1 | x_2)\pi(x_1, x_1)dx_1 dx_2 \\
+		                     & = \int \pi(y_2 | y_1)\pi(y_1 | x_2)\pi(x_2)dx_2           \\
+		                     & = \pi(y_2 | y_1) \int \pi(y_1 | x_2)\pi(x_2)dx_2          \\
+		                     & = \pi(y_2 | y_1)\pi(y_1)                                  \\
+		                     & = \pi(y_1, y_2) = \pi(y)
+	\end{align}
+	1) Used definition of $K(x,y)$, 2) Marginalized out $x_1$,
+	3) Took out terms not depending on $x_2$, 4) Marginalized out $x_2$,
+	5) Used definition of conditional probability again
 \end{frame}
-
-% \begin{frame}{$\pi$-irreducible}
-%     Assume $\pi(x_1, x_2)$ satisfies the positivity condition, then the systematic scan 
-%     Gibbs sampler yields a $\pi$-irreducible Markov chain.
-
-%     For any set $A$ such that 
-%     $$\pi(A) := \int_A \pi(x_1, x_2) \, dx_1 \, dx_2 > 0,$$
-%     we have
-%     \begin{align*}
-%     P\left(X^{(t)} \in A \mid X^{(t-1)} = x^{(t-1)}\right) 
-%     &= \int_A K\left(x^{(t-1)}, x^{(t)}\right) dx^{(t)} \\
-%     &= \int_A \pi_{X_1|X_2}\left(x_1^{(t)} \mid x_2^{(t-1)}\right) \times \pi_{X_2|X_1}\left(x_2^{(t)} \mid x_1^{(t)}\right) \, dx_1^{(t)} \, dx_2^{(t)}
-%     \end{align*}
-%     where $\pi_{X_1|X_2}\left(x_1^{(t)} \mid x_2^{(t-1)}\right)$ and $\pi_{X_2|X_1}\left(x_2^{(t)} \mid x_1^{(t)}\right) > 0$
-%     on a set of non-zero measure. Hence we can conclude that
-%     $$P\left(X^{(t)} \in A \mid X^{(t-1)} = x^{(t-1)}\right) > 0.$$
-
-%     It follows that the chain is $\pi$-irreducible and actually strongly $\pi$-irreducible.
-% \end{frame}
 
 \begin{frame}{$\pi$-irreducible}
-Assume $\pi(x_1, x_2)$ satisfies the positivity condition, then the Gibbs sampler
-yields a $\pi$-irreducible Markov chain.
+	Assume $\pi$ satisfies the positivity condition, then the Gibbs sampler
+	yields a $\pi$-irreducible Markov chain.
 
-\textbf{Irreducibility} Write $K$ for the Gibbs sampler kernel. We need to show that for 
-any set $A \subset \mathbb{X}$ such that $\pi(A) > 0$, we have $K(x, A) > 0$ for 
-any $x \in \mathbb{X}$. We have:
-\begin{equation}
-K(x, A) = \int_A K(x, y)\,dy = \int_A \pi_{X_1|X_2}(y_1 \mid x_2) \times \pi_{X_2|X_1}(y_2 \mid y_1)\,dy_1dy_2
-\end{equation}
+	\textbf{Irreducibility} Write $K$ for the transition kernel. We need to show that for
+	any set $A \subset \mathbb{X}$ such that $\pi(A) > 0$, we have $K(x, A) > 0$ for
+	any $x \in \mathbb{X}$. We have:
+	\begin{equation*}
+		K(x, A) = \int_A K(x, y)\,dy = \int_A \pi_{X_1|X_2}(y_1 \mid x_2) \times \pi_{X_2|X_1}(y_2 \mid y_1)\,dy_1dy_2
+	\end{equation*}
 
-% where the kernel for the systematic scan Gibbs sampler is:
-% \begin{equation}
-% K(x, y) = \pi_{X_1|X_2}(y_1 \mid x_2) \times \pi_{X_2|X_1}(y_2 \mid y_1)
-% \end{equation}
-
-% Therefore:
-% \begin{equation}
-% K(x, A) = \int_A \pi_{X_1|X_2}(y_1 \mid x_2) \times \pi_{X_2|X_1}(y_2 \mid y_1)\,dy_1dy_2
-% \end{equation}
-
-\textbf{Key observation:} Suppose, for contradiction, that $K(x, A) = 0$ and some $A$ with $\pi(A) > 0$.
-Then we must have:
-\begin{equation}
-\pi_{X_1|X_2}(y_1 \mid x_2) \times \pi_{X_2|X_1}(y_2 \mid y_1) = 0
-\end{equation}
-for almost all $y = (y_1, y_2) \in A$.
-
+	\textbf{Proof by contradiction:} Suppose that $K(x, A) = 0$ for some $A$ with $\pi(A) > 0$.
+	Then we must have:
+	\begin{equation*}
+		\pi_{X_1|X_2}(y_1 \mid x_2) \times \pi_{X_2|X_1}(y_2 \mid y_1) = 0
+	\end{equation*}
+	for almost all $y = (y_1, y_2) \in A$.
 \end{frame}
 
-\begin{frame}{$\pi$-irreducible cont, Recurrence, and Convergence}
-By the Hammersley-Clifford theorem, the joint distribution satisfies:
-\begin{equation}
-\pi(y_1, y_2) \propto \frac{\pi_{X_1|X_2}(y_1 \mid x_2)}{\pi_{X_1|X_2}(\cdot \mid \cdot)} \times \frac{\pi_{X_2|X_1}(y_2 \mid y_1)}{\pi_{X_2|X_1}(\cdot \mid \cdot)} = 0
-% \pi(y_1, y_2) \propto \frac{\pi_{X_1|X_2}(y_1 \mid y_2)}{\pi_{X_1|X_2}(x_1^* \mid y_2)} \times \frac{\pi_{X_2|X_1}(y_2 \mid y_1)}{\pi_{X_2|X_1}(x_2^* \mid y_1)}
-\end{equation}
-% for any reference point $(x_1^*, x_2^*)$ with $\pi(x_1^*, x_2^*) > 0$ (which exists by positivity).
+\begin{frame}{$\pi$-irreducible cont and Recurrence}
+	By the Hammersley-Clifford theorem, the joint distribution satisfies:
+	\begin{equation*}
+		\pi(y_1, y_2) \propto \frac{\pi_{X_1|X_2}(y_1 \mid z_2)}{\pi_{X_1|X_2}(z_1 \mid z_2)} \times \frac{\pi_{X_2|X_1}(y_2 \mid y_1)}{\pi_{X_2|X_1}(z_2 \mid y_1)} = 0
+	\end{equation*}
+	for almost all $y = (y_1, y_2) \in A$.
+	and hence implies $\pi(A) = 0$, which \textbf{contradicts} our assumption that $\pi(A) > 0$.
 
-% Since the product $\pi_{X_1|X_2}(y_1 \mid x_2) \times \pi_{X_2|X_1}(y_2 \mid y_1) = 0$ for almost all $y \in A$, and these full conditionals appear in the expression for $\pi(y_1, y_2)$ via Hammersley-Clifford, we must have:
-% \begin{equation}
-% \pi(y_1, y_2) = 0
-% \end{equation}
-for almost all $y = (y_1, y_2) \in A$.
-and hence implies $\pi(A) = 0$, which \textbf{contradicts} our assumption that $\pi(A) > 0$.
+	\vspace{0.5cm}
+	\textbf{Recurrence}: follows from irreducibility and the fact that $\pi$ is
+	invariant (see Meyn and Tweedie, Proposition 10.1.1.)
+\end{frame}
 
-% Therefore, $K(x, A) > 0$ for all $x \in \mathbb{X}$ whenever $\pi(A) > 0$, proving the chain is $\pi$-irreducible.
-
-\textbf{Recurrence}: follows from irreducibility and the fact that $\pi$ is
-invariant (see Meyn and Tweedie, Proposition 10.1.1.)
-
-Assume the Markov chain generated by the systematic scan Gibbs sampler is $\pi$-irreducible and recurrent (both conditions hold when the positivity condition is satisfied) then we have for any integrable function $\phi : \mathbb{X} \to \mathbb{R}$:
-\[
-\lim_{t \to \infty} \frac{1}{t} \sum_{i=1}^{t} \phi\left(X^{(i)}\right) = \int_{\mathbb{X}} \phi(x) \, \pi(x) \, dx
-\]
-for $\pi$-almost all starting value $X^{(1)}$.
-
+\begin{frame}{Convergence}
+	Assume the Markov chain generated by the systematic scan Gibbs sampler is $\pi$-irreducible 
+	and recurrent (both conditions hold when the positivity condition is satisfied) then we 
+	have for any integrable function $\phi : \mathbb{X} \to \mathbb{R}$:
+	\[
+		\lim_{t \to \infty} \frac{1}{t} \sum_{i=1}^{t} \phi\left(X^{(i)}\right) = \int_{\mathbb{X}} \phi(x) \, \pi(x) \, dx
+	\]
+	for $\pi$-almost all starting value $X^{(1)}$.
 \end{frame}
