@@ -59,7 +59,7 @@
 		\column{0.5\textwidth}
 		\textbf{Key Prerequisites}
 
-		\vspace{0.2cm}
+		\vspace{0.15cm}
 		For pseudo-marginal MCMC to be applicable, we need:
 		\begin{enumerate}
 			\item Ability to \textbf{evaluate} $f(x,u)$ pointwise for any $(x,u)$
@@ -73,15 +73,15 @@
 			\hat{\pi}(x) = \frac{1}{N} \sum_{i=1}^{N} \frac{f(x,U_i)}{q_x(U_i)}, \quad U_i \sim q_x(\cdot)
 		\end{equation*}
 
-		\vspace{0.3cm}
+		\vspace{0.2cm}
 		\textbf{Key Property:} $\mathbb{E}[\hat{\pi}(x)] = \pi(x)$ (unbiased!)
 
-		\vspace{0.3cm}
+		\vspace{0.2cm}
 		\textbf{The Magic:} Replace $\pi$ with $\hat{\pi}$ in MH ratio!
 		\begin{equation*}
 			\alpha = \min\left\{1, \frac{\hat{\pi}(y)q(y,x)}{\hat{\pi}(x)q(x,y)}\right\}
 		\end{equation*}
-		\vspace{0.3cm}
+		\vspace{0.2cm}
 		\textcolor{copenhagenred}{\textbf{Result:}} Still targets correct $\pi(x)$!
 
 	\end{columns}
@@ -96,7 +96,7 @@
 	where $Z_x$ satifies:
 	\begin{enumerate}
 		\item is non-negative: $Z_x \geq 0$,
-		\item has density $g_x(·)$: $\int_0^{\infty} g_x(z)dz = 1$
+		\item has density $g_x(\cdot)$: $\int_0^{\infty} g_x(z)dz = 1$
 		\item has expectation 1: $\mathbb{E}[Z_x] = \int_0^{\infty} z g_x(z) dz = 1$.
 	\end{enumerate}
 \end{frame}
