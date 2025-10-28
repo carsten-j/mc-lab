@@ -1,0 +1,99 @@
+\begin{frame}
+	\vspace{2cm}
+	\begin{center}
+		{\Huge\textbf{\textcolor{copenhagenred}{Markov Chains}}}
+		\vspace{1cm}
+
+		\rule{4cm}{3pt}
+		\vspace{2cm}
+	\end{center}
+\end{frame}
+
+\begin{frame}{What is a Markov Chain?}
+    \textbf{Definition:} A discrete-time process \textit{Markov Chain} is a sequence of random variables $\{X_t\}_{t \geq 0}$ with the property that, given the present state, the future and past states are independent. Formally,
+    \begin{equation*}
+        P(X_{t+1} | X_t, X_{t-1}, \ldots, X_0) = P(X_{t+1} | X_t).
+    \end{equation*}
+    The Markov Chain is \textbf{time-homogeneous} if the transition probabilities do not depend on time $t$:
+    \begin{equation*}
+        \forall n \in N, \quad P(X_t = y | X_{t-1} = x) = P(X_{t+m} = y | X_{t+m-1} = x)
+    \end{equation*}
+    i.e. transition probabilities do not depend on $t$.
+    The \textbf{key idea} is MCMC is to construct a Markov Chains such that $x_t$ converges 
+    to a desired distribution $\pi$ as $t \to \infty$ and
+    \begin{equation*}
+        \frac{1}{n} \sum_{t=1}^n \phi(x_t) \to \mathbb{E}_{x \sim \pi}[\phi(x)] \quad \text{as } n \to \infty.
+    \end{equation*}
+    What kinds of conditions are required for this to hold?
+\end{frame}
+
+\begin{frame}{Invariant / stationary distribution}
+    A distribution $\pi$ is called \textbf{invariant} (or \textbf{stationary}) for a Markov Chain with transition kernel $P$ if
+    \begin{equation*}
+        \pi(y) = \int \pi(x) P(x, y) dx.
+    \end{equation*}
+    Intuitively, if the chain starts with distribution $\pi$, it remains in distribution $\pi$ at all future times.
+
+    \vspace{0.5cm}
+    Time-homogeneous is not needed for invariant distribution. But it is often easier to verify in that case.
+\end{frame}
+
+\begin{frame}{Detailed balance and reversibility}
+    A Markov Chain with transition kernel $P$ satisfies the \textbf{detailed balance} condition with respect to a distribution $\pi$ if
+    \begin{equation*}
+        \pi(x) P(x, y) = \pi(y) P(y, x) \quad \text{for all states } x, y.
+    \end{equation*}
+    If a Markov Chain satisfies detailed balance with respect to $\pi$, then $\pi$ is an invariant distribution for the chain.
+    
+    \vspace{0.5cm}
+    Detailed balance implies that the Markov Chain is \textbf{reversible} with respect to $\pi$,
+    meaning that the process looks the same when observed forward or backward in time when 
+    started from the distribution $\pi$.
+\end{frame}
+
+\begin{frame}{Irreducible}
+    A Markov Chain is called \textbf{irreducible} if it is possible to get to any state 
+    from any state. Formally, for any states $x$ and $y$, there exists an integer
+    $0 \leq n < \infty$ such that
+    \begin{equation*}
+        P^n(x, y) > 0,
+    \end{equation*}
+    where $P^n(x, y)$ is the $n$-step transition probability from state $x$ to state $y$.
+\end{frame}
+
+\begin{frame}{Aperiodicity}
+    A Markov Chain is called \textbf{aperiodic} if it does not get trapped in cycles with fixed periods. Ensures actual convergence instead of oscillation.
+    Formally, for any state $x$, the greatest common divisor of the set of integers
+    \begin{equation*}
+        \{ n \geq 1 : P^n(x, x) > 0 \}
+    \end{equation*}
+    is 1.
+    \textbf{Note:} If all states have a non-zero probability of remaining in the same state, the chain is aperiodic.
+\end{frame}
+
+\begin{frame}{Convergence Conditions}
+    For a typical MCMC algorithm to converge to target $\pi$:
+    \begin{itemize}
+        \item Irreducibility: Can your proposal mechanism reach all of $\pi$'s support?
+        \item Aperiodicity: Usually satisfied by having self-loops (rejection steps)
+        \item Correct stationary distribution: Does your acceptance ratio satisfy detailed balance?
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Positive recurrence}
+    A Markov Chain is called \textbf{positive recurrent} if, starting from any state, the expected return time to that state is finite. Formally, for any state $x$,
+    \begin{equation*}
+        \mathbb{E}[T_x | X_0 = x] < \infty,
+    \end{equation*}
+    where $T_x$ is the return time to state $x$.
+    \textbf{Note:} Positive recurrence ensures that the chain does not wander off to infinity and has a well-defined long-term behavior.
+\end{frame}
+
+\begin{frame}{More on recurrence}
+    \begin{itemize}
+        \item \textbf{Recurrent}: A Markov Chain is called recurrent if, starting from any state, the probability of returning to that state is 1.
+        \item \textbf{Positive recurrence:} A Markov Chain is called positive recurrent if it is recurrent and the expected return time to any state is finite, i.e. the chain returns quickly on average.
+        \item \textbf{Transient}:
+        \item \textbf{Null recurrence:} A Markov Chain is called null recurrent if it is recurrent but the expected return time to any state is infinite.
+    \end{itemize}
+\end{frame}
