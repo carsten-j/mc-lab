@@ -1,10 +1,3 @@
-% \documentclass[aspectratio=169]{beamer}
-% \usepackage{beamerstyle}
-
-% \begin{document}
-
-\section{Introduction to MCMC Convergence}
-
 \begin{frame}{The Convergence Challenge in MCMC}
 	\begin{itemize}
 		\item \textbf{Ideal goal}: Assess whether MCMC chains have converged
@@ -13,7 +6,7 @@
 			      \item In general, impossible to know for sure that there is no problem
 			      \item But we can sometimes know for sure that there \textit{is} a problem
 		      \end{itemize}
-		\item \textbf{Two phases of MCMC} [2]:
+		\item \textbf{Two phases of MCMC}:
 		      \begin{itemize}
 			      \item Transient phase (burn-in): mixing time
 			      \item Stationary phase: Monte Carlo estimation
@@ -35,29 +28,13 @@
 \end{frame}
 
 \begin{frame}{Why Convergence Matters}
-	\begin{columns}
-		\begin{column}{0.5\textwidth}
-			\textbf{Non-converged chains:}
-			\begin{itemize}
-				\item Biased estimates
-				\item Incorrect uncertainty quantification
-				\item Missing important modes
-				\item Unreliable inference
-			\end{itemize}
-		\end{column}
-		\begin{column}{0.5\textwidth}
-			\begin{center}
-				\begin{tikzpicture}[scale=0.8]
-					% Non-converged chains
-					\draw[thick, ->] (0,0) -- (5,0) node[right] {Iteration};
-					\draw[thick, ->] (0,0) -- (0,3) node[above] {Parameter};
-					\draw[red, thick] plot[smooth, tension=0.5] coordinates {(0.2,2.5) (1,2.3) (2,2.6) (3,2.4) (4,2.5)};
-					\draw[blue, thick] plot[smooth, tension=0.5] coordinates {(0.2,0.5) (1,0.7) (2,0.4) (3,0.6) (4,0.5)};
-					\node at (2.5, -0.7) {Chains in different regions};
-				\end{tikzpicture}
-			\end{center}
-		\end{column}
-	\end{columns}
+	\textbf{Non-converged chains:}
+	\begin{itemize}
+		\item Biased estimates
+		\item Incorrect uncertainty quantification
+		\item Missing important modes
+		\item Unreliable inference
+	\end{itemize}
 
 	\vspace{0.5cm}
 	\begin{block}{Key Question}
@@ -65,7 +42,14 @@
 	\end{block}
 \end{frame}
 
-\section{The Gelman-Rubin Diagnostic}
+
+\begin{frame}{Motivating example}
+\begin{figure}
+	\centering
+	\includegraphics[width=0.6\textwidth]{bimodal.jpg}
+	\caption{Trace plots of two MCMC chains that have not converged, illustrating the challenge of diagnosing convergence. Both chains appear stable but are sampling different regions of the parameter space.}
+\end{figure}
+\end{frame}
 
 \begin{frame}{The Intuition Behind Gelman-Rubin}
 	\begin{block}{Core Idea}
@@ -76,32 +60,13 @@
 		\end{itemize}
 	\end{block}
 
-	\vspace{0.5cm}
-	\begin{columns}
-		\begin{column}{0.5\textwidth}
-			\textbf{Compare two sources of variance:}
-			\begin{enumerate}
-				\item \textcolor{blue}{Within-chain variance (W)}\\
-				      How much each chain varies
-				\item \textcolor{red}{Between-chain variance (B)}\\
-				      How different chains are from each other
-			\end{enumerate}
-		\end{column}
-		\begin{column}{0.5\textwidth}
-			\begin{center}
-				\begin{tikzpicture}[scale=0.7]
-					% Converged chains
-					\draw[thick, ->] (0,0) -- (5,0) node[right] {Iteration};
-					\draw[thick, ->] (0,0) -- (0,3) node[above] {Parameter};
-					\foreach \y in {1.2, 1.5, 1.8} {
-							\draw[darkgray, thick] plot[smooth, tension=0.7] coordinates
-								{(0.2,\y) (1,\y+0.3) (2,\y-0.2) (3,\y+0.2) (4,\y-0.1)};
-						}
-					\node at (2.5, -0.7) {Converged chains overlap};
-				\end{tikzpicture}
-			\end{center}
-		\end{column}
-	\end{columns}
+		\textbf{Compare two sources of variance:}
+		\begin{enumerate}
+			\item \textcolor{blue}{Within-chain variance (W)}\\
+					How much each chain varies
+			\item \textcolor{red}{Between-chain variance (B)}\\
+					How different chains are from each other
+		\end{enumerate}
 \end{frame}
 
 \begin{frame}{Mathematical Foundation}
@@ -180,58 +145,6 @@
 	\end{itemize}
 \end{frame}
 
-\begin{frame}[fragile]{Example: Detecting Convergence Issues}
-	\begin{columns}
-		\begin{column}{0.5\textwidth}
-			\textbf{Good convergence:}
-			\begin{lstlisting}[basicstyle=\tiny\ttfamily]
-# Chains sampling from same distribution
-chains_good = np.random.normal(0, 1, (4, 1000))
-R_good = gelman_rubin(chains_good)
-print(f"R-hat = {R_good:.3f}")
-# Output: R-hat = 1.002
-            \end{lstlisting}
-
-			\vspace{0.5cm}
-			\textbf{Poor convergence:}
-			\begin{lstlisting}[basicstyle=\tiny\ttfamily]
-# Chains stuck in different modes
-chains_bad = np.array([
-    np.random.normal(-5, 0.5, 1000),
-    np.random.normal(-5, 0.5, 1000),
-    np.random.normal(5, 0.5, 1000),
-    np.random.normal(5, 0.5, 1000)
-])
-R_bad = gelman_rubin(chains_bad)
-print(f"R-hat = {R_bad:.3f}")
-# Output: R-hat = 3.764
-            \end{lstlisting}
-		\end{column}
-		\begin{column}{0.5\textwidth}
-			\begin{center}
-				\begin{tikzpicture}[scale=0.6]
-					% Good convergence
-					\node at (2, 4.5) {\small Good Convergence};
-					\draw[thick, ->] (0,2.5) -- (4,2.5) node[right] {\tiny Iteration};
-					\draw[thick, ->] (0,2.5) -- (0,4) node[above] {\tiny Value};
-					\foreach \i in {1,...,4} {
-							\draw[blue, opacity=0.5] plot[smooth, tension=1] coordinates
-								{(0.2, 3+0.1*\i) (1, 3.2-0.1*\i) (2, 3.1+0.05*\i) (3, 3-0.05*\i)};
-						}
-
-					% Poor convergence
-					\node at (2, 2) {\small Poor Convergence};
-					\draw[thick, ->] (0,0) -- (4,0) node[right] {\tiny Iteration};
-					\draw[thick, ->] (0,0) -- (0,1.5) node[above] {\tiny Value};
-					\draw[red, thick] (0.2, 1.2) -- (3, 1.2);
-					\draw[red, thick] (0.2, 1.1) -- (3, 1.1);
-					\draw[blue, thick] (0.2, 0.3) -- (3, 0.3);
-					\draw[blue, thick] (0.2, 0.2) -- (3, 0.2);
-				\end{tikzpicture}
-			\end{center}
-		\end{column}
-	\end{columns}
-\end{frame}
 
 \section{Convergence Thresholds}
 
@@ -544,12 +457,3 @@ print(f"R-hat = {R_bad:.3f}")
 	\end{itemize}
 \end{frame}
 
-\begin{frame}{}
-	\begin{center}
-		\Huge Thank You!\\
-		\vspace{1cm}
-		\Large Questions?
-	\end{center}
-\end{frame}
-
-% \end{document}
