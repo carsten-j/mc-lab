@@ -10,7 +10,6 @@
 \end{frame}
 
 \begin{frame}{From RWM to more advanced methods}
-
 	\textbf{Random Walk Metropolis (RWM):}
 	$$q^* = q + \sigma W, \quad W \sim N(0, I_d)$$
 
@@ -30,6 +29,8 @@
 \end{frame}
 
 \begin{frame}{From Langevin Diffusion to MALA}
+	Use gradient to \textbf{move toward modes of $\pi$}
+
 	\textbf{Continuous Langevin Diffusion:}
 	$$dX_t = \frac{1}{2}\nabla\log\pi(X_t)dt + dB_t$$
 
@@ -64,8 +65,8 @@
 \end{frame}
 
 \begin{frame}{Optimal Scaling Theory}
-		\textbf{Maximizing Expected Squared Jump Distance (ESJD)}
-		$\mathbb{E}\left[\|X^{(t+1)} - X^{(t)}\|^2\right]$
+	\textbf{Maximizing Expected Squared Jump Distance (ESJD)}
+	$\mathbb{E}\left[\|X^{(t+1)} - X^{(t)}\|^2\right]$
 
 	\begin{columns}
 		\column{0.40\textwidth}
@@ -90,7 +91,6 @@
 		\end{figure}
 	\end{columns}
 
-
 	\vspace{1em}
 
 	\textbf{Implication:} MALA maintains larger step sizes in high dimensions
@@ -101,27 +101,52 @@
 	\end{itemize}
 \end{frame}
 
-\begin{frame}{From Local-Balanced Proposals to Local-Informed \tiny and back again}
-	\textbf{General idea:} Start with symmetric proposal $K_\sigma(x,y) =K_\sigma(y,x)$ 
-	with step-size $\sigma$ and create informed proposal 
-	$$Q_{\pi}(x,y) \propto \pi(y)K_{\sigma}(x,y)$$ 
-	that bias the proposal toward high-probability states. For large $\sigma$ $K_\sigma(x,y) \approx$ Uniform
-	and when $\sigma$ is tiny, $K_\sigma(x,z) \approx 0$ except when $z$ is near $x$ and in
-	that case $\pi(x) \approx  \pi(z)$. General form for informed proposals:
-	$$Q_{g}(x,y) = \frac{g\left( \frac{\pi(y)}{\pi(x)}  \right)K(x,y)}{Z_g(x)}   $$ 
+% \begin{frame}{From Local-Balanced Proposals to Local-Informed \tiny and back again}
+% 	\textbf{General idea:} Start with symmetric proposal $K_\sigma(x,y) =K_\sigma(y,x)$
+% 	with step-size $\sigma$ and create informed proposal
+% 	$$Q_{\pi}(x,y) \propto \pi(y)K_{\sigma}(x,y)$$
+% 	that bias the proposal toward high-probability states. For large $\sigma$ $K_\sigma(x,y) \approx$ Uniform
+% 	and when $\sigma$ is tiny, $K_\sigma(x,z) \approx 0$ except when $z$ is near $x$ and in
+% 	that case $\pi(x) \approx  \pi(z)$. General form for informed proposals:
+% 	$$Q_{g}(x,y) = \frac{g\left( \frac{\pi(y)}{\pi(x)}  \right)K(x,y)}{Z_g(x)}   $$
+% 	\textbf{Remarkable result:}, $Q_g$ is \textbf{locally balanced} if $g(t) = tg(1/t)$.
+% \end{frame}
+
+\begin{frame}{Building Informed Proposals}
+	RWM does not use target information to guide proposals.
+
+	\textbf{Core idea:} Use target density $\pi$ to guide proposals
+
+	\vspace{0.3cm}
+	$\textbf{General Framework:} \quad Q_{g}(x,y) = \frac{g\left( \frac{\pi(y)}{\pi(x)}  \right)K(x,y)}{Z_g(x)}$
+	
+	\vspace{0.3cm}
+	where $g$ is a "balancing function".
+
+	\vspace{0.3cm}
 	\textbf{Remarkable result:}, $Q_g$ is \textbf{locally balanced} if $g(t) = tg(1/t)$.
+
+	\vspace{0.3cm}
+	Two Special Cases:
+	\begin{enumerate}
+		\item MALA: $g(t) = \sqrt{t}$ 
+		\item Barkers Proposal: $g(t) = \frac{t}{1+t}$
+	\end{enumerate}
+	Both cases satisfy this property. This framework unifies MALA and Barker as different
+	choices of the balancing function $g$.
 \end{frame}
 
 \begin{frame}{Barker's Proposal}
-	Expand $\pi(y)/\pi(x)$ around $x$ with local (first-order) approximation: 
+	Expand $\pi(y)/\pi(x)$ around $x$ with local (first-order) approximation:
 	$$e^{\log\pi(y)}  \approx e^{\log\pi(x)+  (\nabla\log\pi(x)^T)(y-x) }$$
 	and use $g(t) = t/(1+t)$. This gives $Z_g(x) = 1/2$
-	and \textbf{Proposal Density:} 
+	and \textbf{Proposal Density:}
 	$$Q_B(x, dy) = \frac{2}{1 + e^{-(\nabla\log\pi(x))^T(y-x)}} K(x, dy)$$
 	where $K(x, dy)$ is a base kernel (e.g., Gaussian)
 
-	\textbf{Key Idea:} Use gradient to stochastically bias proposal direction
+	\textbf{Key Idea:} Use gradient to stochastically bias proposal direction.
 
+	Barker uses gradient to flip coin for direction, MALA uses it as deterministic drift.
 	\begin{algorithm}[H]
 		\caption{1D case with Gaussian kernel}
 		\begin{algorithmic}
@@ -134,49 +159,44 @@
 \end{frame}
 
 \begin{frame}{Just for my own reference}
-This help to understand why Barker proposal use gradient to 
-stochastically bias proposal direction.
+	This help to understand why Barker proposal use gradient to
+	stochastically bias proposal direction.
 
 	\textbf{Weight of proposal:}
 	$$w = \frac{1}{1 + e^{-(\nabla\log\pi(x))^T(y-x)}} = \frac{1}{1 + e^{-g(y-x)}}$$
 	where $g = \nabla\log\pi(x)$.
 
 	\textbf{Behavior analysis:} Consider four scenarios based on the signs of $g$ and $(y-x)$:
-\begin{table}[h]
-\centering
-\begin{tabular}{lccccc}
-\toprule
-\textbf{Scenario} & $(y-x)$ & $g(y-x)$ & $e^{-g(y-x)}$ & \textbf{Weight} & \textbf{Meaning} \\
-\midrule
-$g>0$, move right & $>0$ & $>0$ & $\approx 0$ & $\approx 1$ & Favored \\
-$g>0$, move left & $<0$ & $<0$ & $\to \infty$ & $\approx 0$ & Penalized \\
-$g<0$, move left & $<0$ & $>0$ & $\approx 0$ & $\approx 1$ & Favored \\
-$g<0$, move right & $>0$ & $<0$ & $\to \infty$ & $\approx 0$ & Penalized \\
-\bottomrule
-\end{tabular}
-\caption{Barker proposal weight behavior}
-\label{tab:barker}
-\end{table}
+	\begin{table}[h]
+		\centering
+		\begin{tabular}{lccccc}
+			\toprule
+			\textbf{Scenario} & $(y-x)$ & $g(y-x)$ & $e^{-g(y-x)}$ & \textbf{Weight} & \textbf{Meaning} \\
+			\midrule
+			$g>0$, move right & $>0$    & $>0$     & $\approx 0$   & $\approx 1$     & Favored          \\
+			$g>0$, move left  & $<0$    & $<0$     & $\to \infty$  & $\approx 0$     & Penalized        \\
+			$g<0$, move left  & $<0$    & $>0$     & $\approx 0$   & $\approx 1$     & Favored          \\
+			$g<0$, move right & $>0$    & $<0$     & $\to \infty$  & $\approx 0$     & Penalized        \\
+			\bottomrule
+		\end{tabular}
+		\caption{Barker proposal weight behavior}
+		\label{tab:barker}
+	\end{table}
 \end{frame}
-
 
 \begin{frame}{MALA vs Barker's Proposal}
-\begin{table}[h]
-\centering
-\begin{tabular}{lll}
-\toprule
-\textbf{Aspect} & \textbf{MALA} & \textbf{Barker} \\
-\midrule
-Proposal & $Y = x + \frac{\sigma^2}{2}\nabla\log\pi(x) + \sigma Z$ & $Y = x \pm Z$ with directional prob \\
-Gradient use & Drift term (deterministic shift) & Direction selection (probabilistic) \\
-% Magnitude & Always adds $\frac{\sigma^2}{2}g$ & Doesn't change $|Z|$ magnitude \\
-Robustness & Sensitive to step size & More robust to large gradients \\
-Scaling & $\bigO(d^{-1/3})$ & $\bigO(d^{-1/3})$ \\
-\bottomrule
-\end{tabular}
-
-
-\end{table}
-	
+	\begin{table}[h]
+		\centering
+		\begin{tabular}{lll}
+			\toprule
+			\textbf{Aspect} & \textbf{MALA}                                           & \textbf{Barker}                     \\
+			\midrule
+			Proposal        & $Y = x + \frac{\sigma^2}{2}\nabla\log\pi(x) + \sigma Z$ & $Y = x \pm Z$ with directional prob \\
+			Gradient use    & Drift term (deterministic shift)                        & Direction selection (probabilistic) \\
+			% Magnitude & Always adds $\frac{\sigma^2}{2}g$ & Doesn't change $|Z|$ magnitude \\
+			Robustness      & Sensitive to step size                                  & More robust to large gradients      \\
+			Scaling         & $\bigO(d^{-1/3})$                                       & $\bigO(d^{-1/3})$                   \\
+			\bottomrule
+		\end{tabular}
+	\end{table}
 \end{frame}
-
