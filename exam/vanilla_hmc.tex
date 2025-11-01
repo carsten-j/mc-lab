@@ -1,19 +1,23 @@
-% \documentclass[aspectratio=169]{beamer}
-% \usepackage{beamerstyle}
-
-% \begin{document}
-
 \begin{frame}
-	\frametitle{Vanilla HMC}
+	\vspace{2cm}
+	\begin{center}
+		{\Huge\textbf{\textcolor{copenhagenred}{Vanilla HMC}}}
+		\vspace{1cm}
 
+		\rule{4cm}{3pt}
+		\vspace{2cm}
+	\end{center}
+\end{frame}
+
+\begin{frame}{Vanilla HMC}
 	\begin{itemize}
 		\item Hamiltonian Monte Carlo (HMC) is an MCMC algorithm that leverages concepts from physics to propose new states in the Markov chain.
-		\item It introduces auxiliary momentum variables and simulates Hamiltonian dynamics to explore the target distribution more efficiently.
+		\item It introduces auxiliary variables and simulates Hamiltonian dynamics to explore the target distribution more efficiently.
 		\item In class we saw how MALA improved upon RW-Metropolis by using gradient information; HMC takes this further by simulating trajectories in the state space.
 		\item In high-dimensional spaces it is not enough to explore regions around the modes.
 		\item In high dimensions, probability mass concentrates on a thin shell away from modes
-		\item This typical set has lower density but massive volume → contains most probability mass
-		\item Example: In 100D Gaussian, samples lie ~10 units from origin, not at origin!
+		\item Areas with lower density but massive volume → contains most probability mass
+		% \item Example: In 100D Gaussian, samples lie ~10 units from origin, not at origin!
 		\item So we need a method that makes proposals based on more than the local moves or local gradient at the current position.
 	\end{itemize}
 \end{frame}
@@ -27,6 +31,7 @@
 		position of the puck, given by a $2D$ vector $q$, and the momentum of the puck
 		(its mass times its velocity), given by a $2D$ vector $p$.}
 
+	\vspace{0.5cm}
 	\textit{
 		On a level part of the surface, the puck moves at a constant velocity.
 		If it encounters a rising slope, the puck's momentum allows it to continue, with its
@@ -34,37 +39,45 @@
 		is zero, at which point it will slide back down (with kinetic energy increasing and
 		potential energy decreasing)}
 
-	\textit{
-		In non-physical MCMC applications of Hamiltonian dynamics, the position will correspond to the variables of interest. The potential energy will be minus the log of the probability density for these variables. Momentum variables, one for each position variable, will
-		be introduced artificially.}
+	% \textit{
+	% 	In non-physical MCMC applications of Hamiltonian dynamics, the position will 
+	% 	correspond to the variables of interest. The potential energy will be minus 
+	% 	the log of the probability density for these variables. 
+		% Momentum variables, 
+		% one for each position variable, will
+		% be introduced artificially.
+		% }
 \end{frame}
 
-\begin{frame}{Hamiltonian Dynamics and Equations}
-
+\begin{frame}{Hamiltonian Equation}
 	Our target distribution is defined in terms of a potential energy function $U(q)$,
-	which encodes the negative log probability of the target distribution $\pi(q)$ that we wish to sample from.
+	which encodes the negative log probability of the target distribution $\mu(q)$ that we wish to sample from.
 
-	The dynamics of the system can be described by Hamilton's equations, which govern
-	the time evolution of the position and momentum variables. In our case,
-	these equations take the form:
-
+	We extend the state space by introducing auxiliary variables and sample from $\pi$ with density:
+	
 	\begin{equation*}
-		\frac{dq}{dt} = \frac{\partial H}{\partial p} \quad \text{and} \quad
-		\frac{dp}{dt} = -\frac{\partial H}{\partial q}
+		\pi(q, p) \propto \exp(-H(q, p)) = \exp(-U(q)) \exp(-K(p))	
 	\end{equation*}
 
 	where $H(q, p)$ is the Hamiltonian function, representing the total energy of the system,
 	given by the sum of kinetic and potential energy:
 
 	\begin{equation*}
-		H(q, p) = K(p) + U(q) = \frac{1}{2} p^T M^{-1} p + U(q)
+		H(q, p) = U(q) + K(p) = U(q) + \frac{1}{2} p^T M^{-1} p
 	\end{equation*}
-
 \end{frame}
 
 
+\begin{frame}{Hamiltonian Dynamics}
+	The dynamics of the system can be described by Hamilton's equations, which govern
+	the time evolution of the position and momentum variables. In our case, these equations
+	take the form:
 
-
+	\begin{equation*}
+		\frac{dq}{dt} = \frac{\partial H}{\partial p} \quad \text{and} \quad
+		\frac{dp}{dt} = -\frac{\partial H}{\partial q}
+	\end{equation*}
+\end{frame}
 
 \begin{frame}{Leapfrog Integrator}
 	To numerically simulate Hamiltonian dynamics, we use the leapfrog integrator, which is a
@@ -125,14 +138,11 @@
 		      \end{itemize}
 		\item Optimal acceptance rates:
 		      \begin{itemize}
-			      \item RWM: 0.234 (see Roberts, et. al., 1997)
-			      \item MALA: 0.574 (see Roberts and Rosenthal, 1998)
-			      \item HMC: 0.651 (see Beskos, et. al., 2013)
+			      \item RWM: 0.234
+			      \item MALA: 0.574
+			      \item HMC: 0.651
 		      \end{itemize}
 	\end{itemize}
 	\vspace{0.5cm}
 	\textbf{Choose $L$ adaptively}: NUTS sampler
-
 \end{frame}
-
-% \end{document}
