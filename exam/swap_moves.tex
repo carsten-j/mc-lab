@@ -1,0 +1,68 @@
+\documentclass[12pt]{article}
+\usepackage{amsmath, amssymb, amsthm}
+\usepackage{geometry}
+\geometry{margin=1in}
+
+
+\begin{document}
+
+
+\section{Why Swap Moves Satisfy Detailed Balance}
+\subsection{The Joint Distribution}
+Consider chains $i$ and $j$ with states $x_i$ and $x_j$ respectively. The joint distribution is:
+\begin{equation}
+\pi_{\text{joint}}(x_1, \ldots, x_N) = \prod_{k=1}^{N} \pi(x_k)^{\gamma_k}
+\end{equation}
+Before swap, the joint probability is:
+\begin{equation}
+\pi_{\text{before}} = \pi(x_i)^{\gamma_i} \times \pi(x_j)^{\gamma_j} \times \prod_{k \neq i,j} \pi(x_k)^{\gamma_k}
+\end{equation}
+After swap (exchanging $x_i$ and $x_j$), the joint probability is:
+\begin{equation}
+\pi_{\text{after}} = \pi(x_j)^{\gamma_i} \times \pi(x_i)^{\gamma_j} \times \prod_{k \neq i,j} \pi(x_k)^{\gamma_k}
+\end{equation}
+\subsection{Detailed Balance Equation}
+For the swap move to preserve the joint distribution, we require:
+\begin{equation}
+\pi_{\text{before}} \times P(\text{swap } i \leftrightarrow j) = \pi_{\text{after}} \times P(\text{reverse swap } j \leftrightarrow i)
+\end{equation}
+Explicitly:
+\begin{equation}
+\pi(x_i)^{\gamma_i} \pi(x_j)^{\gamma_j} \times \alpha_{\text{swap}}(i \leftrightarrow j) = \pi(x_j)^{\gamma_i} \pi(x_i)^{\gamma_j} \times \alpha_{\text{swap}}(j \leftrightarrow i)
+\end{equation}
+\subsection{The Metropolis-Hastings Acceptance Ratio}
+We choose the acceptance probability using the Metropolis-Hastings criterion:
+\begin{equation}
+\alpha_{\text{swap}} = \min\left(1, \frac{\pi_{\text{after}}}{\pi_{\text{before}}}\right) = \min\left(1, \frac{\pi(x_j)^{\gamma_i} \pi(x_i)^{\gamma_j}}{\pi(x_i)^{\gamma_i} \pi(x_j)^{\gamma_j}}\right)
+\end{equation}
+This simplifies to:
+\begin{equation}
+\alpha_{\text{swap}} = \min\left(1, \left[\frac{\pi(x_j)}{\pi(x_i)}\right]^{\gamma_i - \gamma_j}\right)
+\end{equation}
+\subsection{Verification of Detailed Balance}
+\textbf{Case 1:} If $\pi_{\text{after}} > \pi_{\text{before}}$, then $\alpha_{\text{swap}} = 1$ and $\alpha_{\text{reverse}} = \frac{\pi_{\text{before}}}{\pi_{\text{after}}}$
+Left side:
+\begin{equation}
+\pi_{\text{before}} \times 1 = \pi_{\text{before}}
+\end{equation}
+Right side:
+\begin{equation}
+\pi_{\text{after}} \times \frac{\pi_{\text{before}}}{\pi_{\text{after}}} = \pi_{\text{before}} \quad \checkmark
+\end{equation}
+\textbf{Case 2:} If $\pi_{\text{after}} < \pi_{\text{before}}$, then $\alpha_{\text{swap}} = \frac{\pi_{\text{after}}}{\pi_{\text{before}}}$ and $\alpha_{\text{reverse}} = 1$
+Left side:
+\begin{equation}
+\pi_{\text{before}} \times \frac{\pi_{\text{after}}}{\pi_{\text{before}}} = \pi_{\text{after}}
+\end{equation}
+Right side:
+\begin{equation}
+\pi_{\text{after}} \times 1 = \pi_{\text{after}} \quad \checkmark
+\end{equation}
+\subsection{Conclusion}
+In both cases, detailed balance holds. This ensures that the swap moves preserve the joint equilibrium distribution $\pi_{\text{joint}}$. Since the marginal distribution of chain $N$ (where $\gamma_N = 1$) is:
+\begin{equation}
+\pi_{\text{marginal}}(x_N) \propto \pi(x_N)^{\gamma_N} = \pi(x_N)
+\end{equation}
+chain $N$ correctly samples from our target distribution $\pi(x)$.
+
+\end{document}
