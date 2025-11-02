@@ -4,6 +4,168 @@
 
 \begin{document}
 
+\section*{Derivation of Expected Sample Variance for One Chain}
+
+\textbf{Goal:} Find $\mathbb{E}\left[\frac{1}{T-1}\sum_{t=1}^{T}(X_{m,t} - \bar{X}_m)^2\right]$
+
+\subsection*{Setup}
+\begin{itemize}
+    \item $X_{m,t}$ = sample $t$ from chain $m$
+    \item $\bar{X}_m = \frac{1}{T}\sum_{t=1}^{T} X_{m,t}$ = sample mean
+    \item $\mu = \mathbb{E}[X_{m,t}]$ = true mean
+    \item $\sigma^2 = \text{Var}(X_{m,t})$ = true variance
+\end{itemize}
+
+\subsection*{Step 1: Rewrite the deviation from sample mean}
+
+\begin{align}
+\sum_{t=1}^{T}(X_{m,t} - \bar{X}_m)^2 
+&= \sum_{t=1}^{T}\left[(X_{m,t} - \mu) - (\bar{X}_m - \mu)\right]^2
+\end{align}
+
+\subsection*{Step 2: Expand the square}
+
+\begin{align}
+&= \sum_{t=1}^{T}\left[(X_{m,t} - \mu)^2 - 2(X_{m,t} - \mu)(\bar{X}_m - \mu) + (\bar{X}_m - \mu)^2\right] \\
+&= \sum_{t=1}^{T}(X_{m,t} - \mu)^2 - 2(\bar{X}_m - \mu)\sum_{t=1}^{T}(X_{m,t} - \mu) + T(\bar{X}_m - \mu)^2
+\end{align}
+
+\subsection*{Step 3: Simplify the middle term}
+
+Note that:
+\begin{align}
+\sum_{t=1}^{T}(X_{m,t} - \mu) &= \sum_{t=1}^{T}X_{m,t} - T\mu \\
+&= T\bar{X}_m - T\mu \\
+&= T(\bar{X}_m - \mu)
+\end{align}
+
+Therefore:
+\begin{align}
+\sum_{t=1}^{T}(X_{m,t} - \bar{X}_m)^2 
+&= \sum_{t=1}^{T}(X_{m,t} - \mu)^2 - 2T(\bar{X}_m - \mu)^2 + T(\bar{X}_m - \mu)^2 \\
+&= \sum_{t=1}^{T}(X_{m,t} - \mu)^2 - T(\bar{X}_m - \mu)^2
+\end{align}
+
+\subsection*{Step 4: Take expectations}
+
+\begin{align}
+\mathbb{E}\left[\sum_{t=1}^{T}(X_{m,t} - \bar{X}_m)^2\right] 
+&= \mathbb{E}\left[\sum_{t=1}^{T}(X_{m,t} - \mu)^2\right] - T \cdot \mathbb{E}\left[(\bar{X}_m - \mu)^2\right] \\
+&= \sum_{t=1}^{T}\mathbb{E}\left[(X_{m,t} - \mu)^2\right] - T \cdot \text{Var}(\bar{X}_m) \\
+&= T\sigma^2 - T \cdot \text{Var}(\bar{X}_m) \\
+&= T\left(\sigma^2 - \text{Var}(\bar{X}_m)\right)
+\end{align}
+
+\subsection*{Step 5: Divide by $(T-1)$}
+
+\begin{equation}
+\boxed{\mathbb{E}\left[\frac{1}{T-1}\sum_{t=1}^{T}(X_{m,t} - \bar{X}_m)^2\right] = \frac{T}{T-1}\left(\sigma^2 - \text{Var}(\bar{X}_m)\right)}
+\end{equation}
+
+\subsection*{Key Insight}
+
+\textbf{For i.i.d. samples:} $\text{Var}(\bar{X}_m) = \sigma^2/T$, which gives:
+\begin{equation}
+\frac{T}{T-1}\left(\sigma^2 - \frac{\sigma^2}{T}\right) = \frac{T}{T-1} \cdot \frac{(T-1)\sigma^2}{T} = \sigma^2
+\end{equation}
+
+So the sample variance is unbiased.
+
+\textbf{For MCMC samples:} Due to autocorrelation, $\text{Var}(\bar{X}_m) > \sigma^2/T$, which means:
+\begin{equation}
+\mathbb{E}\left[\frac{1}{T-1}\sum_{t=1}^{T}(X_{m,t} - \bar{X}_m)^2\right] < \sigma^2
+\end{equation}
+
+Therefore, \textbf{$W$ underestimates the true variance} $\sigma^2$.
+
+\section*{Derivation of $\mathbb{E}[B]$}
+
+\textbf{Given:}
+\begin{equation}
+B = \frac{1}{M-1}\sum_{m=1}^{M}(\bar{X}_{m} - \bar{X}_{..})^2
+\end{equation}
+
+where:
+\begin{itemize}
+    \item $\bar{X}_m = \frac{1}{T}\sum_{t=1}^{T}X_{m,t}$ = mean of chain $m$
+    \item $\bar{X}_{..} = \frac{1}{M}\sum_{m=1}^{M}\bar{X}_m$ = overall mean across all chains
+    \item $\mu = \mathbb{E}[X_{m,t}]$ = true mean
+\end{itemize}
+
+\subsection*{Step 1: Rewrite deviations from overall mean}
+
+\begin{align}
+\sum_{m=1}^{M}(\bar{X}_m - \bar{X}_{..})^2 
+&= \sum_{m=1}^{M}\left[(\bar{X}_m - \mu) - (\bar{X}_{..} - \mu)\right]^2
+\end{align}
+
+\subsection*{Step 2: Expand the square}
+
+\begin{align}
+&= \sum_{m=1}^{M}\left[(\bar{X}_m - \mu)^2 - 2(\bar{X}_m - \mu)(\bar{X}_{..} - \mu) + (\bar{X}_{..} - \mu)^2\right] \\
+&= \sum_{m=1}^{M}(\bar{X}_m - \mu)^2 - 2(\bar{X}_{..} - \mu)\sum_{m=1}^{M}(\bar{X}_m - \mu) + M(\bar{X}_{..} - \mu)^2
+\end{align}
+
+\subsection*{Step 3: Simplify the middle term}
+
+Note that:
+\begin{align}
+\sum_{m=1}^{M}(\bar{X}_m - \mu) &= \sum_{m=1}^{M}\bar{X}_m - M\mu \\
+&= M\bar{X}_{..} - M\mu \\
+&= M(\bar{X}_{..} - \mu)
+\end{align}
+
+Therefore:
+\begin{align}
+\sum_{m=1}^{M}(\bar{X}_m - \bar{X}_{..})^2 
+&= \sum_{m=1}^{M}(\bar{X}_m - \mu)^2 - 2M(\bar{X}_{..} - \mu)^2 + M(\bar{X}_{..} - \mu)^2 \\
+&= \sum_{m=1}^{M}(\bar{X}_m - \mu)^2 - M(\bar{X}_{..} - \mu)^2
+\end{align}
+
+\subsection*{Step 4: Take expectations}
+
+\begin{align}
+\mathbb{E}\left[\sum_{m=1}^{M}(\bar{X}_m - \bar{X}_{..})^2\right] 
+&= \mathbb{E}\left[\sum_{m=1}^{M}(\bar{X}_m - \mu)^2\right] - M \cdot \mathbb{E}\left[(\bar{X}_{..} - \mu)^2\right] \\
+&= \sum_{m=1}^{M}\mathbb{E}\left[(\bar{X}_m - \mu)^2\right] - M \cdot \mathbb{E}\left[(\bar{X}_{..} - \mu)^2\right] \\
+&= M \cdot \text{Var}(\bar{X}_m) - M \cdot \text{Var}(\bar{X}_{..})
+\end{align}
+
+(assuming all chains have the same variance of their means)
+
+\subsection*{Step 5: Find $\text{Var}(\bar{X}_{..})$}
+
+Since $\bar{X}_{..} = \frac{1}{M}\sum_{m=1}^{M}\bar{X}_m$ and assuming chains are independent:
+
+\begin{align}
+\text{Var}(\bar{X}_{..}) &= \text{Var}\left(\frac{1}{M}\sum_{m=1}^{M}\bar{X}_m\right) \\
+&= \frac{1}{M^2}\sum_{m=1}^{M}\text{Var}(\bar{X}_m) \\
+&= \frac{1}{M^2} \cdot M \cdot \text{Var}(\bar{X}_m) \\
+&= \frac{1}{M}\text{Var}(\bar{X}_m)
+\end{align}
+
+\subsection*{Step 6: Substitute back}
+
+\begin{align}
+\mathbb{E}\left[\sum_{m=1}^{M}(\bar{X}_m - \bar{X}_{..})^2\right] 
+&= M \cdot \text{Var}(\bar{X}_m) - M \cdot \frac{1}{M}\text{Var}(\bar{X}_m) \\
+&= M \cdot \text{Var}(\bar{X}_m) - \text{Var}(\bar{X}_m) \\
+&= (M-1)\text{Var}(\bar{X}_m)
+\end{align}
+
+\subsection*{Step 7: Divide by $(M-1)$}
+
+\begin{equation}
+\boxed{\mathbb{E}[B] = \frac{1}{M-1} \cdot (M-1)\text{Var}(\bar{X}_m) = \text{Var}(\bar{X}_m)}
+\end{equation}
+
+\subsection*{Conclusion}
+
+This confirms what's stated on slide 6: \textbf{$\mathbb{E}[B] = \text{Var}(\bar{X}_m)$}
+
+The between-chain variance $B$ is an unbiased estimator of the variance of the chain means!
+
+
 \section*{Derivation of the Gelman-Rubin Variance Estimator}
 
 The derivation follows these steps:
