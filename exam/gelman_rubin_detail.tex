@@ -1,0 +1,45 @@
+\documentclass{article}
+\usepackage{amsmath}
+\usepackage{amssymb}
+
+\begin{document}
+
+\section*{Derivation of the Gelman-Rubin Variance Estimator}
+
+The derivation follows these steps:
+
+\begin{enumerate}
+\item \textbf{Equation (2)} shows that the sample variance $s_i^2$ is biased for the target variance $\sigma^2$:
+\begin{equation}
+E_F[s_i^2] = \frac{n}{n-1}\left(\sigma^2 - \text{Var}_F(\bar{X}_{i\cdot})\right)
+\end{equation}
+
+\item \textbf{Key insight}: For correlated MCMC samples, $\text{Var}_F(\bar{X}_{i\cdot})$ is much larger than $\sigma^2/n$ (which would be the case for independent samples). This means $s_i^2$ systematically underestimates $\sigma^2$.
+
+\item \textbf{Rearranging equation (2)} to solve for $\sigma^2$:
+\begin{equation}
+\sigma^2 = \frac{n-1}{n}E_F[s_i^2] + \text{Var}_F(\bar{X}_{i\cdot})
+\end{equation}
+
+\item \textbf{Equation (3)} provides an estimator for $\text{Var}_F(\bar{X}_{i\cdot})$:
+\begin{equation}
+\frac{B}{n} = \frac{1}{m-1}\sum_{i=1}^m (\bar{X}_{i\cdot} - \hat{\mu})^2
+\end{equation}
+
+This is the sample variance of the $m$ chain means, which estimates the variance of $\bar{X}_{i\cdot}$.
+
+\item \textbf{Final estimator}: Substituting the sample quantities:
+\begin{itemize}
+\item Use $s^2$ (the average of the $m$ sample variances) to estimate $E_F[s_i^2]$
+\item Use $B/n$ to estimate $\text{Var}_F(\bar{X}_{i\cdot})$
+\end{itemize}
+
+This gives:
+\begin{equation}
+\boxed{\hat{\sigma}^2 = \frac{n-1}{n}s^2 + \frac{B}{n}}
+\end{equation}
+\end{enumerate}
+
+\textbf{Intuition}: Gelman-Rubin corrects for the downward bias in $s^2$ by adding back an estimate of the between-chain variance $(B/n)$, which captures the additional variability due to correlation in the Markov chains.
+
+\end{document}

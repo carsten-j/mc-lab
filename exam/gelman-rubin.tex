@@ -65,9 +65,9 @@
 
 \begin{frame}{Within-chain variance - $W$}
 	Run $M$ chains. The sample mean of $M$ sample variances
-	$$W  = \frac{1}{M} \sum_{m=1}^M \Big[\frac{1}{T-1} \sum_{t=1}^T (X_{m,t} - \bar{X}_m)^2\Big]$$
+	$$W  = \frac{1}{M} \sum_{m=1}^M \Big[\frac{1}{T-1} \sum_{t=1}^T (X_{m,t} - \bar{X}_{m,\cdot})^2\Big]$$
 	We have that the expected sample variance for one chain is
-	$$\mathbb{E}\Big[\frac{1}{T-1} \sum_{t=1}^T (X_{m,t} - \bar{X}_m)^2\Big] = \frac{T}{T-1} \Big(\sigma^2 - Var(\bar{X}_{m,.})\Big)$$
+	$$\mathbb{E}\Big[\frac{1}{T-1} \sum_{t=1}^T (X_{m,t} - \bar{X}_{m,\cdot})^2\Big] = \frac{T}{T-1} \Big(\sigma^2 - Var(\bar{X}_{m,\cdot})\Big) < \sigma^2$$\footnote{when $Var(\bar{X}_{m,\cdot}) > \sigma^2/T$}
 	making the estimator unbiased only in the case $Var(\bar{X}_{m,.}) = \sigma^2 / T$ (iid samples).
 
 	For MCMC samples, $Var(\bar{X}_{m,.})$ is typically larger than $\sigma^2 / T$ due to
@@ -76,9 +76,23 @@
 
 \begin{frame}{Between-chain variance - $B$}
 	For the $M$ chains, we compute the variance of the chain means:
-	$$B = \frac{1}{M-1} \sum_{m=1}^M (\bar{X}_{m,.} - \bar{X}_{..})^2$$
-	where $\bar{X}_{..}$ is the mean across all chains. We have that
-	$$\mathbb{E}[B] = Var(\bar{X}_{m,.})$$
+	$$B = \frac{1}{M-1} \sum_{m=1}^M (\bar{X}_{m,\cdot} - \bar{X}_{\cdot,\cdot})^2$$
+	where $\bar{X}_{\cdot,\cdot}$ is the mean across all chains. We have that
+	$$\mathbb{E}[B] = Var(\bar{X}_{m,\cdot})$$
+\end{frame}
+
+\begin{frame}{Formula for $V$}
+	Let $S_m = \frac{1}{T-1} \sum_{t=1}^T (X_{m,t} - \bar{X}_{m,\cdot})^2$ be the sample variance of chain $m$.
+	On slide 5 we saw that the expected sample variance for one chain is
+	$$\mathbb{E}[S_m] = \frac{T}{T-1} \Big(\sigma^2 - Var(\bar{X}_{m,\cdot})\Big)$$
+	Rearranging gives:
+	$$\sigma^2 = \frac{T-1}{T} \mathbb{E}[S_m] + Var(\bar{X}_{m,\cdot})$$
+	We can estimate $\mathbb{E}[S_m]$ with $W$ and $Var(\bar{X}_{m,\cdot})$ with $B$, yielding:
+	$$V = \frac{T-1}{T}W + B$$
+
+	\textbf{Intuition}: Gelman-Rubin corrects for the downward bias in $W$ by adding back an 
+	estimate of the between-chain variance $B$, which captures the additional variability due
+	to correlation in the Markov chains.
 \end{frame}
 
 \begin{frame}{Estimators for Target Variance}
@@ -88,15 +102,15 @@
 	and
 	$$V = \frac{T-1}{T}W + B = \Big(1-\frac{1}{T}\Big)W +B$$
 
-	\vspace{0.3cm}
+	\vspace{0.1cm}
 	$V$ weights the within-chain variance $W$ heavily when you have many samples, but
 	adds between-chain variance $B$ to account for the fact that chains might not be
 	fully mixed yet.
 
-	\vspace{0.3cm}
+	\vspace{0.1cm}
 	In case we start the chains from overdispersed initial values, we expect $B$ to be large,
 	since chain means $\bar{X}_{m,.}$ are more spread out than they should be. Thus:
-	$B$ overestimates $Var(\bar{X}_{m,.})$. This makes $V$ overestimate $\sigma^2$.
+	$B$ overestimates $Var(\bar{X}_{m,\cdot})$. This makes $V$ overestimate $\sigma^2$.
 \end{frame}
 
 \begin{frame}{The Gelman-Rubin Statistic}
@@ -172,6 +186,10 @@
 \begin{frame}{Weaknesses of Gelman-Rubin}
 	\begin{enumerate}
 		\item \textbf{Only detects lack of convergence}
+		\item $\hat{R} \approx 1$ does not guarantee convergence
+		      \begin{itemize}
+			      \item Chains might agree but still be wrong
+		      \end{itemize}
 		\item \textbf{Cannot detect if all modes are found}
 		      \begin{itemize}
 			      \item Only checks if chains agree with each other
