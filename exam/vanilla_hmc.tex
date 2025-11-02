@@ -22,12 +22,12 @@
 		\item In high-dimensional spaces it is not enough to explore regions around the modes.
 		\item In high dimensions, probability mass concentrates on a thin shell away from modes
 		\item Areas with lower density but massive volume → contains most probability mass
-		% \item Example: In 100D Gaussian, samples lie ~10 units from origin, not at origin!
+		      % \item Example: In 100D Gaussian, samples lie ~10 units from origin, not at origin!
 		\item So we need a method that makes proposals based on more than the local moves or local gradient at the current position.
 	\end{itemize}
 	\begin{figure}
 		\centering
-		\includegraphics[width=0.46\textwidth]{mode_vs_typical_set.pdf} 
+		\includegraphics[width=0.46\textwidth]{mode_vs_typical_set.pdf}
 	\end{figure}
 \end{frame}
 
@@ -54,9 +54,9 @@
 	which encodes the negative log probability of the target distribution $\pi(q)$ that we wish to sample from.
 
 	We extend the state space by introducing auxiliary variables and sample from $\pi$ with density:
-	
+
 	\begin{equation*}
-		\pi(q, p) \propto \exp(-H(q, p)) = \exp(-U(q)) \exp(-K(p))	
+		\pi(q, p) \propto \exp(-H(q, p)) = \exp(-U(q)) \exp(-K(p))
 	\end{equation*}
 
 	where $H(q, p)$ is the Hamiltonian function, representing the total energy of the system,
@@ -71,7 +71,7 @@
 \begin{frame}{Hamiltonian Dynamics}
 	How to propose new states $(q, p)$? We simulate Hamiltonian dynamics to generate proposals that
 	preserve the Hamiltonian (total energy) of the system. Exact Hamiltonian dynamics preserve both energy and volume; in discrete time, leapfrog approximately preserves energy but exactly preserves volume.
-	
+
 	\vspace{0.4cm}
 	The dynamics of the system can be described by these equations,
 	\begin{equation*}
@@ -79,7 +79,7 @@
 		\frac{dp}{dt} = -\frac{\partial H}{\partial q}
 	\end{equation*}
 	which govern
-	the time evolution of the position and momentum variables. How do we simulate these dynamics 
+	the time evolution of the position and momentum variables. How do we simulate these dynamics
 	in discrete time? We use the Leapfrog integrator.
 \end{frame}
 
@@ -111,7 +111,7 @@
 
 			\item \textbf{Hamilton flow}: propose $q^*, p^* = \varphi_{\varepsilon}^L(q, p)$ - (deterministic)\\
 			      Simulate dynamics for $L$ steps using leapfrog integrator. Follow energy-conserving  \\
-			      trajectory through phase space. 
+			      trajectory through phase space.
 
 			\item \textbf{Metropolis acceptance step} - (random) \\
 			      accept $q^*$ with probability
