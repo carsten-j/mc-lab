@@ -41,8 +41,8 @@
 
 	\vspace{0.5em}
 
-	\textbf{Euler-Maruyama Discretization (ULA):}
-	$$X^{(t)} = X^{(t-1)} + \frac{\epsilon}{2}\nabla\log\pi(X^{(t-1)}) + \sqrt{\epsilon}W$$
+	\textbf{Unadjusted Langevin Algorithm (ULA):}
+	$$X^{(t)} = X^{(t-1)} + \frac{\sigma^2}{2}\nabla\log\pi(X^{(t-1)}) + \sigma W$$
 
 	\textbf{Problem} $\pi$ is \textbf{not} the invariant distribution of ULA!
 
@@ -76,7 +76,7 @@
 			\item \textcolor{copenhagenred}{MALA: $\sigma = \bigO(d^{-1/3})$}
 		\end{itemize}
 
-		\vspace{0.5em}
+		\vspace{0.3em}
 
 		\textbf{Optimal Acceptance:}
 		\begin{itemize}
@@ -91,26 +91,16 @@
 		\end{figure}
 	\end{columns}
 
-	\vspace{1em}
+	\vspace{0.3em}
 
 	\textbf{Implication:} MALA maintains larger step sizes in high dimensions
 	\begin{itemize}
 		\item Better exploration efficiency
 		\item Faster convergence to target distribution
+		\item MALA hard to tune
 		\item \textbf{Catch} - requires gradient computation
 	\end{itemize}
 \end{frame}
-
-% \begin{frame}{From Local-Balanced Proposals to Local-Informed \tiny and back again}
-% 	\textbf{General idea:} Start with symmetric proposal $K_\sigma(x,y) =K_\sigma(y,x)$
-% 	with step-size $\sigma$ and create informed proposal
-% 	$$Q_{\pi}(x,y) \propto \pi(y)K_{\sigma}(x,y)$$
-% 	that bias the proposal toward high-probability states. For large $\sigma$ $K_\sigma(x,y) \approx$ Uniform
-% 	and when $\sigma$ is tiny, $K_\sigma(x,z) \approx 0$ except when $z$ is near $x$ and in
-% 	that case $\pi(x) \approx  \pi(z)$. General form for informed proposals:
-% 	$$Q_{g}(x,y) = \frac{g\left( \frac{\pi(y)}{\pi(x)}  \right)K(x,y)}{Z_g(x)}   $$
-% 	\textbf{Remarkable result:}, $Q_g$ is \textbf{locally balanced} if $g(t) = tg(1/t)$.
-% \end{frame}
 
 \begin{frame}{Building Informed Proposals}
 	RWM does not use target information to guide proposals.
@@ -137,23 +127,18 @@
 \end{frame}
 
 \begin{frame}{Barker's Proposal}
-	Expand $\pi(y)/\pi(x)$ around $x$ with local (first-order) approximation:
-	$$e^{\log\pi(y)}  \approx e^{\log\pi(x)+  (\nabla\log\pi(x)^T)(y-x) }$$
-	and use $g(t) = t/(1+t)$. This gives $Z_g(x) = 1/2$
-	and \textbf{Proposal Density:}
+	Consider the family of informed proposals:
+	$$Q_{g}(x, dy) = \frac{g\left( e^{(\nabla\log\pi(x))^T(y-x)}  \right)K(x, dy)}{Z_g(x)}$$
+	and use $g(t) = t/(1+t)$. This gives $Z_g(x) = 1/2$ and \textbf{Proposal Density:}
 	$$Q_B(x, dy) = \frac{2}{1 + e^{-(\nabla\log\pi(x))^T(y-x)}} K(x, dy)$$
-	where $K(x, dy)$ is a base kernel (e.g., Gaussian)
-
 	\textbf{Key Idea:} Use gradient to stochastically bias proposal direction.
-
 	Barker uses gradient to flip coin for direction, MALA uses it as deterministic drift.
 	\begin{algorithm}[H]
 		\caption{1D case with Gaussian kernel}
 		\begin{algorithmic}
 			\STATE Sample $Z \sim N(0, \sigma^2)$
-			\STATE Calculate $p(x, z) = 1/(1 + \exp(-Z^T\nabla\log\pi(x)))$:
-			\STATE Set $b(x,z) = 1$ with probability $p(x,z)$, else $b(x,z) = -1$
-			\STATE Propose $Y = x + b(x,z)Z$
+			\STATE Propose $Y= x + Z$ with probability $1/(1 + \exp(-Z^T\nabla\log\pi(x)))$
+			\STATE Propose $Y= x - Z$ with residual probability
 		\end{algorithmic}
 	\end{algorithm}
 \end{frame}
