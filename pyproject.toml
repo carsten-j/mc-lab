@@ -23,7 +23,7 @@ dependencies = [
     "arviz==0.22.0",
     "iprogress==0.4",
     "matplotlib==3.10.0",
-    "numpy==2.0.2",
+    "numpy==2.3.4",
     "scipy==1.16.1",
     "tqdm==4.67.1",
     "watermark==2.5.0",
